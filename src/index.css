@@ -1,0 +1,217 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.cdnfonts.com/css/glacial-indifference');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --app-bg: #f5fbff;
+    --surface: #ffffff;
+    --surface-soft: #f8fbfb;
+    --text-main: #102033;
+    --text-muted: #607086;
+    --primary: #0f766e;
+    --primary-dark: #115e59;
+    --primary-soft: #e5f4f2;
+    --accent: #2563eb;
+    --accent-soft: #eaf2ff;
+    --accent-border: #c9dcff;
+    --warning: #b45309;
+    --danger: #dc2626;
+    --border: #dbe7e5;
+    --shadow-soft: 0 10px 28px rgba(16, 32, 51, 0.06);
+    --shadow-card: 0 8px 22px rgba(16, 32, 51, 0.05);
+}
+
+@layer base {
+    html,
+    body,
+    #root {
+        @apply h-full;
+    }
+
+    body {
+        @apply font-sans antialiased;
+        color: var(--text-main);
+        background:
+            radial-gradient(circle at top right, rgba(37, 99, 235, 0.08), transparent 30rem),
+            linear-gradient(180deg, #f5fbff 0%, #f7fbfa 48%, #f5faf8 100%);
+    }
+
+    ::selection {
+        background: rgba(15, 118, 110, 0.16);
+        color: #073b36;
+    }
+
+    table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+}
+
+@layer components {
+    .page-shell {
+        @apply mx-auto w-full max-w-7xl space-y-6;
+    }
+
+    .page-header {
+        @apply relative flex flex-col gap-4 overflow-hidden rounded-3xl border bg-white p-6 shadow-[var(--shadow-soft)] sm:flex-row sm:items-center sm:justify-between;
+        border-color: var(--border);
+    }
+
+    .page-header::before {
+        content: '';
+        @apply absolute inset-y-5 left-0 w-1 rounded-r-full bg-blue-500;
+    }
+
+    .page-kicker {
+        @apply mb-2 inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-blue-700;
+        background: var(--accent-soft);
+        border-color: var(--accent-border);
+    }
+
+    .page-title {
+        @apply text-3xl font-extrabold tracking-[-0.04em] text-slate-900 sm:text-4xl;
+    }
+
+    .page-subtitle {
+        @apply mt-2 max-w-2xl text-sm leading-6 text-slate-500;
+    }
+
+    .btn {
+        @apply inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-bold transition-colors duration-150 focus:outline-none focus:ring-4 disabled:pointer-events-none disabled:opacity-50;
+    }
+
+    .btn-sm {
+        @apply rounded-xl px-3 py-1.5 text-xs;
+    }
+
+    .btn-primary {
+        @apply bg-teal-700 text-white hover:bg-teal-800 focus:ring-blue-100;
+        box-shadow: inset 0 -2px 0 rgba(37, 99, 235, 0.22);
+    }
+
+    .btn-secondary {
+        @apply border bg-white text-slate-700 shadow-sm hover:bg-slate-50 hover:text-teal-800 focus:ring-teal-100;
+        border-color: var(--border);
+    }
+
+    .btn-danger {
+        @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-100;
+    }
+
+    .card {
+        @apply overflow-hidden rounded-3xl border bg-white shadow-[var(--shadow-card)];
+        border-color: var(--border);
+        box-shadow: var(--shadow-card), 0 0 0 1px rgba(37, 99, 235, 0.015);
+    }
+
+    .card:hover {
+        border-color: rgba(37, 99, 235, 0.22);
+    }
+
+    .panel {
+        @apply rounded-3xl border bg-white p-5 shadow-[var(--shadow-card)];
+        border-color: var(--border);
+    }
+
+    .input {
+        @apply block w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400;
+        border-color: var(--border);
+    }
+
+    .input-icon-left {
+        @apply pl-11;
+    }
+
+    .badge {
+        @apply inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold;
+    }
+
+    .badge-teal {
+        @apply border-teal-100 bg-teal-50 text-teal-700;
+    }
+
+    .badge-blue {
+        @apply border-blue-100 bg-blue-50 text-blue-700;
+    }
+
+    .badge-green {
+        @apply border-emerald-100 bg-emerald-50 text-emerald-700;
+    }
+
+    .badge-purple {
+        @apply border-purple-100 bg-purple-50 text-purple-700;
+    }
+
+    .badge-pink {
+        @apply border-pink-100 bg-pink-50 text-pink-700;
+    }
+
+    .table-card {
+        @apply card overflow-x-auto;
+    }
+
+    .table-card table {
+        @apply min-w-full;
+    }
+
+    .table-card thead {
+        @apply bg-slate-50;
+    }
+
+    .table-card th {
+        @apply px-6 py-4 text-left text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-500;
+    }
+
+    .table-card td {
+        @apply border-t border-slate-100 px-6 py-4 text-sm;
+    }
+
+    .table-card tbody tr {
+        @apply transition-colors;
+    }
+
+    .table-card tbody tr:hover {
+        @apply bg-slate-50;
+    }
+
+    .modal-backdrop {
+        @apply fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4;
+    }
+
+    .modal-card {
+        @apply w-full max-w-md rounded-3xl border bg-white p-6 shadow-xl;
+        border-color: var(--border);
+    }
+
+    .alert-info {
+        @apply rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800;
+    }
+
+    .alert-error {
+        @apply rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700;
+    }
+
+    .alert-success {
+        @apply rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-700;
+    }
+
+    .icon-pill {
+        @apply inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700;
+    }
+
+    .accent-strip {
+        @apply h-1.5 rounded-full;
+        background: linear-gradient(90deg, #0f766e 0%, #2563eb 58%, #60a5fa 100%);
+    }
+
+    .action-icon {
+        @apply inline-flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-slate-400 transition hover:border-teal-100 hover:bg-teal-50 hover:text-teal-700;
+    }
+
+    .danger-icon {
+        @apply hover:border-red-100 hover:bg-red-50 hover:text-red-600;
+    }
+}

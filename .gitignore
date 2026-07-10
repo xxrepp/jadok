@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables (contains sensitive config)
+.env
+
+# Data directory (SQLite DB and uploads - user data)
+data/
+
+# Database backups
+*.backup.gz
+
+# Logs
+npm-debug.log
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+coverage/
+.nyc_output/

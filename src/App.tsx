@@ -1,0 +1,106 @@
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import { useAuth } from './context/AuthContext'
+import Login from './pages/Login'
+import ProtectedRoute from './components/ProtectedRoute'
+import Layout from './components/Layout'
+
+import Departments from './pages/admin/Departments'
+import Doctors from './pages/admin/Doctors'
+import AdminUsers from './pages/admin/Users'
+
+import ScheduleInput from './pages/nurse/ScheduleInput'
+
+import Templates from './pages/pr/Templates'
+import TemplateEditor from './pages/pr/TemplateEditor'
+import ScheduleList from './pages/shared/ScheduleList'
+import { Users as UsersIcon, Stethoscope, Building2, Calendar, FileImage, ArrowRight } from 'lucide-react'
+
+import Viewer from './pages/public/Viewer'
+
+function DashboardHome() {
+    const { profile } = useAuth()
+    const cards = [
+        { label: 'Pengguna', description: 'Kelola akun staff dan akses aplikasi.', path: '/admin/users', show: profile?.role === 'IT', icon: UsersIcon },
+        { label: 'Poliklinik', description: 'Daftar unit layanan untuk pengelompokan jadwal.', path: '/admin/departments', show: profile?.role === 'IT', icon: Building2 },
+        { label: 'Dokter', description: 'Direktori dokter dan relasi ke poliklinik.', path: '/admin/doctors', show: profile?.role === 'IT', icon: Stethoscope },
+        { label: 'Input Jadwal', description: 'Masukkan jadwal praktik dokter harian.', path: '/nurse/schedule', show: profile?.role === 'NURSE' || profile?.role === 'IT', icon: Calendar },
+        { label: 'Template HUMAS', description: 'Kelola desain poster dan export PNG.', path: '/pr', show: profile?.role === 'PR' || profile?.role === 'IT', icon: FileImage },
+        { label: 'Semua Jadwal', description: 'Pantau, edit, dan validasi jadwal aktif.', path: '/schedules', show: true, icon: Calendar },
+    ].filter((card) => card.show)
+
+    return (
+        <div className="page-shell">
+            <section className="page-header">
+                <div>
+                    <h1 className="page-title">Dashboard Jadwal Dokter</h1>
+                    <p className="page-subtitle">
+                        Pilih menu kerja untuk mengelola jadwal, data dokter, pengguna, dan template publikasi.
+                    </p>
+                    <div className="accent-strip mt-5 w-52" />
+                </div>
+            </section>
+
+            <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                {cards.map((card) => {
+                    const Icon = card.icon
+                    return (
+                        <Link key={card.path} to={card.path} className="group card p-5 transition-colors hover:bg-blue-50/30">
+                            <div className="flex items-start justify-between gap-4">
+                                <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700">
+                                    <Icon className="h-6 w-6" />
+                                </span>
+                                <span className="rounded-full border border-slate-200 bg-white p-2 text-slate-400 transition group-hover:border-blue-100 group-hover:text-blue-700">
+                                    <ArrowRight className="h-4 w-4" />
+                                </span>
+                            </div>
+                            <h2 className="mt-5 text-xl font-extrabold tracking-[-0.03em] text-slate-900">{card.label}</h2>
+                            <p className="mt-2 text-sm leading-6 text-slate-500">{card.description}</p>
+                        </Link>
+                    )
+                })}
+            </section>
+        </div>
+    )
+}
+
+function App() {
+    return (
+        <AuthProvider>
+            <BrowserRouter>
+                <Routes>
+                    <Route path="/viewer" element={<Viewer />} />
+                    <Route path="/login" element={<Login />} />
+
+                    <Route element={<ProtectedRoute />}>
+                        <Route element={<Layout />}>
+                            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+                            <Route element={<ProtectedRoute allowedRoles={['IT']} />}>
+                                <Route path="/admin" element={<DashboardHome />} />
+                                <Route path="/admin/users" element={<AdminUsers />} />
+                                <Route path="/admin/departments" element={<Departments />} />
+                                <Route path="/admin/doctors" element={<Doctors />} />
+                            </Route>
+
+                            <Route element={<ProtectedRoute allowedRoles={['NURSE', 'IT']} />}>
+                                <Route path="/nurse/schedule" element={<ScheduleInput />} />
+                            </Route>
+
+                            <Route element={<ProtectedRoute allowedRoles={['PR', 'IT']} />}>
+                                <Route path="/pr" element={<Templates />} />
+                                <Route path="/pr/editor/:id" element={<TemplateEditor />} />
+                            </Route>
+
+                            <Route path="/dashboard" element={<DashboardHome />} />
+                            <Route path="/schedules" element={<ScheduleList />} />
+                        </Route>
+                    </Route>
+                    <Route path="*" element={<div className="flex min-h-screen items-center justify-center p-8 text-center text-slate-500">404 - Page Not Found</div>} />
+                </Routes>
+            </BrowserRouter>
+        </AuthProvider>
+    )
+}
+
+export default App
