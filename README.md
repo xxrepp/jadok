@@ -30,9 +30,12 @@ Open **http://localhost:5173**
 
 **Create first admin:**
 ```bash
-curl -X POST http://localhost:8787/api/bootstrap-admin \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"secret123"}'
+node scripts/create-admin.mjs admin secret123
+```
+
+Or use default credentials (admin/admin123):
+```bash
+node scripts/create-admin.mjs
 ```
 
 ## Stack
