@@ -50,7 +50,7 @@ export default function ScheduleList() {
     return (
         <div className="page-shell max-w-7xl">
             <section className="page-header">
-                <div><span className="page-kicker">Schedule control</span><h1 className="page-title">Manajemen Jadwal</h1><p className="page-subtitle">Pantau jadwal berdasarkan tanggal dan poliklinik, lalu koreksi jam praktik jika ada perubahan.</p></div>
+                <div><h1 className="page-title">Manajemen Jadwal</h1><p className="page-subtitle">Pantau jadwal berdasarkan tanggal dan poliklinik, lalu koreksi jam praktik jika ada perubahan.</p></div>
                 <div className="flex flex-col gap-2 sm:flex-row">
                     <div className="relative"><CalendarIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-teal-600" /><input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="input input-icon-left py-2" /></div>
                     <div className="relative"><Filter className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-teal-600" /><select value={filterDept} onChange={(e) => setFilterDept(e.target.value)} className="input input-icon-left py-2"><option value="">Semua Poliklinik</option>{departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</select></div>

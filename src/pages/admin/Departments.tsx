@@ -74,7 +74,6 @@ export default function Departments() {
         <div className="page-shell">
             <section className="page-header">
                 <div>
-                    <span className="page-kicker">Master data</span>
                     <h1 className="page-title">Manajemen Poliklinik</h1>
                     <p className="page-subtitle">Kelola unit layanan yang digunakan untuk mengelompokkan dokter dan jadwal publik.</p>
                 </div>
@@ -101,7 +100,7 @@ export default function Departments() {
             {isModalOpen && (
                 <div className="modal-backdrop">
                     <div className="modal-card">
-                        <div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-extrabold tracking-[-0.04em]">{editingDept ? 'Edit Poliklinik' : 'Tambah Poliklinik'}</h2><button onClick={handleCloseModal} className="action-icon"><X className="h-5 w-5" /></button></div>
+                        <div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-semibold">{editingDept ? 'Edit Poliklinik' : 'Tambah Poliklinik'}</h2><button onClick={handleCloseModal} className="action-icon"><X className="h-5 w-5" /></button></div>
                         {error && <div className="alert-error mb-4">{error}</div>}
                         <form onSubmit={handleSubmit} className="space-y-5">
                             <div><label className="mb-2 block text-sm font-bold text-slate-700">Nama Poliklinik</label><input type="text" value={formData.name} onChange={(e) => setFormData({ name: e.target.value })} className="input" required /></div>

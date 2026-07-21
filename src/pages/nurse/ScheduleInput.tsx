@@ -105,14 +105,13 @@ export default function ScheduleInput() {
         <div className="page-shell max-w-5xl">
             <section className="page-header">
                 <div>
-                    <span className="page-kicker">Alur PERAWAT</span>
                     <h1 className="page-title">Input Jadwal Dokter</h1>
                     <p className="page-subtitle">Pilih poliklinik, dokter, dan jam praktik. Form dibuat step-by-step agar input harian cepat dan minim salah.</p>
                 </div>
-                <div className="hidden rounded-3xl border border-teal-100 bg-teal-50/80 p-4 text-teal-800 sm:block">
-                    <CalendarIcon className="mb-2 h-6 w-6" />
-                    <p className="text-sm font-extrabold">{selectedDate}</p>
-                    <p className="text-xs font-semibold text-teal-600">Tanggal jadwal</p>
+                <div className="hidden rounded-xl border border-teal-100 bg-teal-50 p-4 text-teal-900 sm:block">
+                    <CalendarIcon className="mb-2 h-5 w-5 text-teal-600" />
+                    <p className="text-sm font-semibold">{selectedDate}</p>
+                    <p className="text-xs text-teal-700">Tanggal jadwal</p>
                 </div>
             </section>
 
@@ -226,20 +225,19 @@ export default function ScheduleInput() {
                 </section>
 
                 <aside className="panel h-fit">
-                    <span className="page-kicker">Preview</span>
-                    <h2 className="mt-2 text-xl font-extrabold tracking-[-0.04em] text-slate-900">Ringkasan Jadwal</h2>
-                    <div className="mt-5 space-y-3">
-                        <div className="rounded-3xl border border-teal-100 bg-teal-50/70 p-4">
-                            <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-700">Poliklinik</p>
-                            <p className="mt-1 font-extrabold text-slate-900">{selectedDepartment?.name || 'Belum dipilih'}</p>
+                    <h2 className="text-lg font-semibold text-slate-900">Ringkasan Jadwal</h2>
+                    <div className="mt-4 space-y-3">
+                        <div className="rounded-xl border border-teal-100 bg-teal-50 p-4">
+                            <p className="text-xs font-medium text-teal-700">Poliklinik</p>
+                            <p className="mt-1 font-semibold text-slate-900">{selectedDepartment?.name || 'Belum dipilih'}</p>
                         </div>
-                        <div className="rounded-3xl border border-blue-100 bg-blue-50/70 p-4">
-                            <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700">Dokter</p>
-                            <p className="mt-1 font-extrabold text-slate-900">{selectedDoctor?.name || 'Belum dipilih'}</p>
+                        <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+                            <p className="text-xs font-medium text-blue-700">Dokter</p>
+                            <p className="mt-1 font-semibold text-slate-900">{selectedDoctor?.name || 'Belum dipilih'}</p>
                         </div>
-                        <div className="rounded-3xl border border-emerald-100 bg-emerald-50/70 p-4">
-                            <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">Waktu</p>
-                            <p className="mt-1 font-extrabold text-slate-900">{startTime} - {endTime}</p>
+                        <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                            <p className="text-xs font-medium text-emerald-700">Waktu</p>
+                            <p className="mt-1 font-semibold text-slate-900">{startTime} - {endTime}</p>
                         </div>
                     </div>
                 </aside>

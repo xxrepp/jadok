@@ -52,8 +52,8 @@ export default function Templates() {
             if (!file.type.startsWith('image/')) {
                 throw new Error('Hanya file gambar yang diperbolehkan.')
             }
-            if (file.size > 10 * 1024 * 1024) {
-                throw new Error('Ukuran file maksimal 10MB.')
+            if (file.size > 25 * 1024 * 1024) {
+                throw new Error('Ukuran file maksimal 25MB.')
             }
 
             setUploading(true)

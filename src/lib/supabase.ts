@@ -38,7 +38,11 @@ export async function parseApiResponse(response: Response, requestUrl: string) {
     const contentType = response.headers.get('content-type') || ''
     const trimmed = text.trimStart()
     if (contentType.includes('text/html') || trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html')) {
-        throw new Error(`Expected JSON from API endpoint ${requestUrl}, but received HTML. Check that the Jadok API server is running and that ${requestUrl} is routed to the backend, not the Vite app.`)
+        throw new Error(
+            `Expected JSON from API endpoint ${requestUrl}, but received HTML (HTTP ${response.status}). ` +
+            `Usually the API is down, the Vite proxy failed, or a reverse proxy rejected a large body. ` +
+            `Confirm npm run dev is running both servers and the file is under 25MB.`
+        )
     }
 
     try {

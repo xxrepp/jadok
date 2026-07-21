@@ -6,8 +6,18 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://localhost:8787',
-      '/uploads': 'http://localhost:8787',
+      '/api': {
+        target: 'http://localhost:8791',
+        changeOrigin: true,
+        timeout: 120_000,
+        proxyTimeout: 120_000,
+      },
+      '/uploads': {
+        target: 'http://localhost:8791',
+        changeOrigin: true,
+        timeout: 120_000,
+        proxyTimeout: 120_000,
+      },
     },
   },
 })

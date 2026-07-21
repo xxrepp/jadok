@@ -274,9 +274,11 @@ export function createApp({ db, uploadDir = path.resolve('uploads'), staticDir =
   const sessions = new Map()
   fs.mkdirSync(uploadDir, { recursive: true })
 
+  const MAX_UPLOAD_BYTES = 25 * 1024 * 1024
+
   const upload = multer({
     dest: uploadDir,
-    limits: { fileSize: 10 * 1024 * 1024 },
+    limits: { fileSize: MAX_UPLOAD_BYTES },
     fileFilter(_req, file, cb) {
       if (!file.mimetype.startsWith('image/')) cb(new Error('Only image uploads are allowed'))
       else cb(null, true)
@@ -460,6 +462,12 @@ export function createApp({ db, uploadDir = path.resolve('uploads'), staticDir =
   }
 
   app.use((error, _req, res, _next) => {
+    if (error instanceof multer.MulterError) {
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ error: `File too large. Maximum size is ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB.` })
+      }
+      return res.status(400).json({ error: error.message || 'Upload failed' })
+    }
     const status = error.status || 500
     res.status(status).json({ error: error.message || 'Internal server error' })
   })

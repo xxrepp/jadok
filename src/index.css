@@ -6,22 +6,22 @@
 @tailwind utilities;
 
 :root {
-    --app-bg: #f5fbff;
+    --app-bg: #eef6f5;
     --surface: #ffffff;
-    --surface-soft: #f8fbfb;
-    --text-main: #102033;
-    --text-muted: #607086;
-    --primary: #0f766e;
-    --primary-dark: #115e59;
-    --primary-soft: #e5f4f2;
+    --surface-soft: #f0fdfa;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --primary: #0d9488;
+    --primary-dark: #0f766e;
+    --primary-soft: #ccfbf1;
     --accent: #2563eb;
-    --accent-soft: #eaf2ff;
-    --accent-border: #c9dcff;
+    --accent-soft: #eff6ff;
+    --accent-border: #dbeafe;
     --warning: #b45309;
     --danger: #dc2626;
-    --border: #dbe7e5;
-    --shadow-soft: 0 10px 28px rgba(16, 32, 51, 0.06);
-    --shadow-card: 0 8px 22px rgba(16, 32, 51, 0.05);
+    --border: #d5e5e3;
+    --shadow-soft: 0 4px 16px rgba(15, 23, 42, 0.06);
+    --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06);
 }
 
 @layer base {
@@ -34,14 +34,12 @@
     body {
         @apply font-sans antialiased;
         color: var(--text-main);
-        background:
-            radial-gradient(circle at top right, rgba(37, 99, 235, 0.08), transparent 30rem),
-            linear-gradient(180deg, #f5fbff 0%, #f7fbfa 48%, #f5faf8 100%);
+        background: var(--app-bg);
     }
 
     ::selection {
-        background: rgba(15, 118, 110, 0.16);
-        color: #073b36;
+        background: rgba(13, 148, 136, 0.2);
+        color: #0f172a;
     }
 
     table {
@@ -56,69 +54,63 @@
     }
 
     .page-header {
-        @apply relative flex flex-col gap-4 overflow-hidden rounded-3xl border bg-white p-6 shadow-[var(--shadow-soft)] sm:flex-row sm:items-center sm:justify-between;
+        @apply flex flex-col gap-4 rounded-xl border bg-white p-5 sm:flex-row sm:items-center sm:justify-between;
         border-color: var(--border);
     }
 
-    .page-header::before {
-        content: '';
-        @apply absolute inset-y-5 left-0 w-1 rounded-r-full bg-blue-500;
-    }
-
-    .page-kicker {
-        @apply mb-2 inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-blue-700;
-        background: var(--accent-soft);
-        border-color: var(--accent-border);
-    }
-
     .page-title {
-        @apply text-3xl font-extrabold tracking-[-0.04em] text-slate-900 sm:text-4xl;
+        @apply text-2xl font-bold text-slate-900 sm:text-3xl;
     }
 
     .page-subtitle {
-        @apply mt-2 max-w-2xl text-sm leading-6 text-slate-500;
+        @apply mt-1 max-w-2xl text-sm leading-6 text-slate-500;
     }
 
     .btn {
-        @apply inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-bold transition-colors duration-150 focus:outline-none focus:ring-4 disabled:pointer-events-none disabled:opacity-50;
+        @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:pointer-events-none disabled:opacity-50;
     }
 
     .btn-sm {
-        @apply rounded-xl px-3 py-1.5 text-xs;
+        @apply rounded-lg px-3 py-1.5 text-xs;
     }
 
     .btn-primary {
-        @apply bg-teal-700 text-white hover:bg-teal-800 focus:ring-blue-100;
-        box-shadow: inset 0 -2px 0 rgba(37, 99, 235, 0.22);
+        @apply text-white focus:ring-teal-200;
+        background: var(--primary);
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-dark);
     }
 
     .btn-secondary {
-        @apply border bg-white text-slate-700 shadow-sm hover:bg-slate-50 hover:text-teal-800 focus:ring-teal-100;
+        @apply border bg-white text-slate-700 hover:bg-teal-50 hover:text-teal-800 focus:ring-teal-200;
         border-color: var(--border);
     }
 
     .btn-danger {
-        @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-100;
+        @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-200;
     }
 
     .card {
-        @apply overflow-hidden rounded-3xl border bg-white shadow-[var(--shadow-card)];
+        @apply overflow-hidden rounded-xl border bg-white;
         border-color: var(--border);
-        box-shadow: var(--shadow-card), 0 0 0 1px rgba(37, 99, 235, 0.015);
-    }
-
-    .card:hover {
-        border-color: rgba(37, 99, 235, 0.22);
+        box-shadow: var(--shadow-card);
     }
 
     .panel {
-        @apply rounded-3xl border bg-white p-5 shadow-[var(--shadow-card)];
+        @apply rounded-xl border bg-white p-5;
         border-color: var(--border);
     }
 
     .input {
-        @apply block w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-800 shadow-sm transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400;
+        @apply block w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-800 transition placeholder:text-slate-400 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400;
         border-color: var(--border);
+    }
+
+    .input:focus {
+        border-color: var(--primary);
+        --tw-ring-color: var(--primary-soft);
     }
 
     .input-icon-left {
@@ -126,7 +118,7 @@
     }
 
     .badge {
-        @apply inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-bold;
+        @apply inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold;
     }
 
     .badge-teal {
@@ -162,7 +154,7 @@
     }
 
     .table-card th {
-        @apply px-6 py-4 text-left text-[11px] font-extrabold uppercase tracking-[0.16em] text-slate-500;
+        @apply px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500;
     }
 
     .table-card td {
@@ -178,37 +170,32 @@
     }
 
     .modal-backdrop {
-        @apply fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4;
+        @apply fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 p-4;
     }
 
     .modal-card {
-        @apply w-full max-w-md rounded-3xl border bg-white p-6 shadow-xl;
+        @apply w-full max-w-md rounded-xl border bg-white p-6 shadow-lg;
         border-color: var(--border);
     }
 
     .alert-info {
-        @apply rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800;
+        @apply rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800;
     }
 
     .alert-error {
-        @apply rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700;
+        @apply rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-700;
     }
 
     .alert-success {
-        @apply rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-700;
+        @apply rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-700;
     }
 
     .icon-pill {
-        @apply inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700;
-    }
-
-    .accent-strip {
-        @apply h-1.5 rounded-full;
-        background: linear-gradient(90deg, #0f766e 0%, #2563eb 58%, #60a5fa 100%);
+        @apply inline-flex h-10 w-10 items-center justify-center rounded-xl border border-teal-100 bg-teal-50 text-teal-700;
     }
 
     .action-icon {
-        @apply inline-flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-slate-400 transition hover:border-teal-100 hover:bg-teal-50 hover:text-teal-700;
+        @apply inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent text-slate-400 transition hover:border-teal-100 hover:bg-teal-50 hover:text-teal-700;
     }
 
     .danger-icon {

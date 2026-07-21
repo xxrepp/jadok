@@ -37,25 +37,24 @@ function DashboardHome() {
                     <p className="page-subtitle">
                         Pilih menu kerja untuk mengelola jadwal, data dokter, pengguna, dan template publikasi.
                     </p>
-                    <div className="accent-strip mt-5 w-52" />
                 </div>
             </section>
 
-            <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {cards.map((card) => {
                     const Icon = card.icon
                     return (
-                        <Link key={card.path} to={card.path} className="group card p-5 transition-colors hover:bg-blue-50/30">
+                        <Link key={card.path} to={card.path} className="group card p-5 transition-colors hover:bg-teal-50/40">
                             <div className="flex items-start justify-between gap-4">
-                                <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700">
-                                    <Icon className="h-6 w-6" />
+                                <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-teal-100 bg-teal-50 text-teal-700">
+                                    <Icon className="h-5 w-5" />
                                 </span>
-                                <span className="rounded-full border border-slate-200 bg-white p-2 text-slate-400 transition group-hover:border-blue-100 group-hover:text-blue-700">
+                                <span className="rounded-lg border border-slate-200 bg-white p-2 text-slate-400 transition group-hover:border-teal-100 group-hover:text-teal-700">
                                     <ArrowRight className="h-4 w-4" />
                                 </span>
                             </div>
-                            <h2 className="mt-5 text-xl font-extrabold tracking-[-0.03em] text-slate-900">{card.label}</h2>
-                            <p className="mt-2 text-sm leading-6 text-slate-500">{card.description}</p>
+                            <h2 className="mt-4 text-lg font-semibold text-slate-900">{card.label}</h2>
+                            <p className="mt-1 text-sm leading-6 text-slate-500">{card.description}</p>
                         </Link>
                     )
                 })}
