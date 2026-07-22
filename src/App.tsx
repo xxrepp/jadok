@@ -8,13 +8,14 @@ import Layout from './components/Layout'
 import Departments from './pages/admin/Departments'
 import Doctors from './pages/admin/Doctors'
 import AdminUsers from './pages/admin/Users'
+import ExportSchedule from './pages/admin/ExportSchedule'
 
 import ScheduleInput from './pages/nurse/ScheduleInput'
 
 import Templates from './pages/pr/Templates'
 import TemplateEditor from './pages/pr/TemplateEditor'
 import ScheduleList from './pages/shared/ScheduleList'
-import { Users as UsersIcon, Stethoscope, Building2, Calendar, FileImage, ArrowRight } from 'lucide-react'
+import { Users as UsersIcon, Stethoscope, Building2, Calendar, Download, ArrowRight } from 'lucide-react'
 
 import Viewer from './pages/public/Viewer'
 
@@ -24,8 +25,8 @@ function DashboardHome() {
         { label: 'Pengguna', description: 'Kelola akun staff dan akses aplikasi.', path: '/admin/users', show: profile?.role === 'IT', icon: UsersIcon },
         { label: 'Poliklinik', description: 'Daftar unit layanan untuk pengelompokan jadwal.', path: '/admin/departments', show: profile?.role === 'IT', icon: Building2 },
         { label: 'Dokter', description: 'Direktori dokter dan relasi ke poliklinik.', path: '/admin/doctors', show: profile?.role === 'IT', icon: Stethoscope },
+        { label: 'Ekspor Jadwal', description: 'Pratinjau jadwal hari ini dan unduh PNG 9:16 untuk IG Story.', path: '/admin/export-schedule', show: profile?.role === 'IT', icon: Download },
         { label: 'Input Jadwal', description: 'Masukkan jadwal praktik dokter harian.', path: '/nurse/schedule', show: profile?.role === 'NURSE' || profile?.role === 'IT', icon: Calendar },
-        { label: 'Template HUMAS', description: 'Kelola desain poster dan export PNG.', path: '/pr', show: profile?.role === 'PR' || profile?.role === 'IT', icon: FileImage },
         { label: 'Semua Jadwal', description: 'Pantau, edit, dan validasi jadwal aktif.', path: '/schedules', show: true, icon: Calendar },
     ].filter((card) => card.show)
 
@@ -80,6 +81,7 @@ function App() {
                                 <Route path="/admin/users" element={<AdminUsers />} />
                                 <Route path="/admin/departments" element={<Departments />} />
                                 <Route path="/admin/doctors" element={<Doctors />} />
+                                <Route path="/admin/export-schedule" element={<ExportSchedule />} />
                             </Route>
 
                             <Route element={<ProtectedRoute allowedRoles={['NURSE', 'IT']} />}>
