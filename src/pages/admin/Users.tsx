@@ -67,7 +67,7 @@ export default function Users() {
     return (
         <div className="page-shell">
             <section className="page-header">
-                <div><h1 className="page-title">Manajemen Pengguna</h1><p className="page-subtitle">Buat akun staff dan atur akses IT, PERAWAT, atau HUMAS tanpa menyentuh database langsung.</p></div>
+                <div><h1 className="page-title">Manajemen Pengguna</h1><p className="page-subtitle">Buat akun staff dan atur akses IT atau PERAWAT tanpa menyentuh database langsung.</p></div>
                 <button onClick={() => handleOpenModal()} className="btn btn-primary"><Plus className="mr-2 h-5 w-5" />Buat Pengguna</button>
             </section>
 
@@ -78,7 +78,15 @@ export default function Users() {
                 <div className="table-card"><table><thead><tr><th>Username</th><th>Peran</th><th className="text-right">Aksi</th></tr></thead><tbody>{users.map((user) => <tr key={user.id}><td className="font-bold text-slate-900"><span className="mr-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><UsersIcon className="h-4 w-4" /></span>{user.username || '-'}</td><td><span className={`badge ${roleBadge(user.role)}`}>{roleLabel(user.role)}</span></td><td className="text-right"><button onClick={() => handleOpenModal(user)} className="action-icon mr-2"><Pencil className="h-4 w-4" /></button><button onClick={() => handleDelete(user.id)} className="action-icon danger-icon"><Trash2 className="h-4 w-4" /></button></td></tr>)}</tbody></table></div>
             )}
 
-            {isModalOpen && <div className="modal-backdrop"><div className="modal-card"><div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-semibold">{editingUser ? 'Edit Pengguna' : 'Buat Pengguna'}</h2><button onClick={handleCloseModal} className="action-icon"><X className="h-5 w-5" /></button></div>{error && <div className="alert-error mb-4">{error}</div>}{success && <div className="alert-success mb-4">{success}</div>}<form onSubmit={handleSubmit} className="space-y-5"><div><label className="mb-2 block text-sm font-bold text-slate-700">Username</label><input type="text" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} className="input" /></div>{!editingUser && <div><label className="mb-2 block text-sm font-bold text-slate-700">Kata Sandi</label><input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="input" required /></div>}<div><label className="mb-2 block text-sm font-bold text-slate-700">Peran</label><select value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value as any })} className="input"><option value="NURSE">PERAWAT</option><option value="PR">HUMAS</option><option value="IT">Admin IT</option></select></div><div className="flex justify-end gap-3"><button type="button" onClick={handleCloseModal} className="btn btn-secondary">Batal</button><button type="submit" disabled={saving} className="btn btn-primary"><Save className="mr-2 h-4 w-4" />{saving ? 'Menyimpan...' : 'Simpan'}</button></div></form></div></div>}
+            {isModalOpen && <div className="modal-backdrop"><div className="modal-card"><div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-semibold">{editingUser ? 'Edit Pengguna' : 'Buat Pengguna'}</h2><button onClick={handleCloseModal} className="action-icon"><X className="h-5 w-5" /></button></div>{error && <div className="alert-error mb-4">{error}</div>}{success && <div className="alert-success mb-4">{success}</div>}<form onSubmit={handleSubmit} className="space-y-5"><div><label className="mb-2 block text-sm font-bold text-slate-700">Username</label><input type="text" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} className="input" /></div>{!editingUser && <div><label className="mb-2 block text-sm font-bold text-slate-700">Kata Sandi</label><input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="input" required /></div>}<div><label className="mb-2 block text-sm font-bold text-slate-700">Peran</label><select
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'IT' | 'PR' | 'NURSE' })}
+                  className="input"
+                >
+                  <option value="NURSE">PERAWAT</option>
+                  <option value="IT">Admin IT</option>
+                  {editingUser?.role === 'PR' && <option value="PR">HUMAS</option>}
+                </select></div><div className="flex justify-end gap-3"><button type="button" onClick={handleCloseModal} className="btn btn-secondary">Batal</button><button type="submit" disabled={saving} className="btn btn-primary"><Save className="mr-2 h-4 w-4" />{saving ? 'Menyimpan...' : 'Simpan'}</button></div></form></div></div>}
         </div>
     )
 }

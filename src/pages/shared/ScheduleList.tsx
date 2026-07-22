@@ -14,6 +14,7 @@ type Department = Database['public']['Tables']['departments']['Row']
 export default function ScheduleList() {
     const [schedules, setSchedules] = useState<Schedule[]>([])
     const [departments, setDepartments] = useState<Department[]>([])
+    const [departmentsLoaded, setDepartmentsLoaded] = useState(false)
     const [loading, setLoading] = useState(true)
     const [filterDate, setFilterDate] = useState(getLocalDateISOString())
     const [filterDept, setFilterDept] = useState<string>('')
@@ -21,9 +22,19 @@ export default function ScheduleList() {
     const [editForm, setEditForm] = useState<{ start_time: string; end_time: string }>({ start_time: '', end_time: '' })
 
     useEffect(() => { fetchDepartments() }, [])
-    useEffect(() => { if (departments.length > 0) void fetchSchedules() }, [filterDate, filterDept, departments])
+    useEffect(() => {
+        if (!departmentsLoaded) return
+        void fetchSchedules()
+    }, [filterDate, filterDept, departmentsLoaded, departments])
 
-    const fetchDepartments = async () => { const { data } = await supabase.from('departments').select('*').order('name'); setDepartments(data || []) }
+    const fetchDepartments = async () => {
+        try {
+            const { data } = await supabase.from('departments').select('*').order('name')
+            setDepartments(data || [])
+        } finally {
+            setDepartmentsLoaded(true)
+        }
+    }
     const fetchSchedules = async () => {
         try {
             setLoading(true)
