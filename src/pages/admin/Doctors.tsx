@@ -67,7 +67,7 @@ export default function Doctors() {
     return (
         <div className="page-shell">
             <section className="page-header">
-                <div><h1 className="page-title">Manajemen Dokter</h1><p className="page-subtitle">Kelola nama dokter dan poliklinik agar jadwal publik dan template HUMAS selalu sinkron.</p></div>
+                <div><h1 className="page-title">Manajemen Dokter</h1><p className="page-subtitle">Kelola nama dokter dan poliklinik.</p></div>
                 <button onClick={() => handleOpenModal()} className="btn btn-primary"><Plus className="mr-2 h-5 w-5" />Tambah Dokter</button>
             </section>
 

@@ -67,7 +67,7 @@ export default function Users() {
     return (
         <div className="page-shell">
             <section className="page-header">
-                <div><h1 className="page-title">Manajemen Pengguna</h1><p className="page-subtitle">Buat akun staff dan atur akses IT atau PERAWAT tanpa menyentuh database langsung.</p></div>
+                <div><h1 className="page-title">Manajemen Pengguna</h1><p className="page-subtitle">Buat dan atur akses akun staff.</p></div>
                 <button onClick={() => handleOpenModal()} className="btn btn-primary"><Plus className="mr-2 h-5 w-5" />Buat Pengguna</button>
             </section>
 

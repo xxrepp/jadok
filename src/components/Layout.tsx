@@ -80,12 +80,12 @@ export default function Layout() {
                                 <NavItem to="/admin/users" icon={Users} label="Pengguna" helper="Akun & peran" />
                                 <NavItem to="/admin/departments" icon={Building2} label="Poliklinik" helper="Unit layanan" />
                                 <NavItem to="/admin/doctors" icon={Stethoscope} label="Dokter" helper="Direktori dokter" />
-                                <NavItem to="/admin/export-schedule" icon={Download} label="Ekspor Jadwal" helper="PNG 9:16 IG Story" />
+                                <NavItem to="/admin/export-schedule" icon={Download} label="Ekspor Jadwal" helper="Ekspor jadwal dokter." />
                             </>
                         )}
 
                         {(profile?.role === 'NURSE' || profile?.role === 'IT') && (
-                            <NavItem to="/nurse/schedule" icon={Calendar} label="Input Jadwal" helper="Untuk PERAWAT" />
+                            <NavItem to="/nurse/schedule" icon={Calendar} label="Input Jadwal" helper="Input jadwal dokter." />
                         )}
 
                         <div className="mb-2 mt-5 px-3 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">

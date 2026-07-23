@@ -23,10 +23,10 @@ function DashboardHome() {
     const { profile } = useAuth()
     const cards = [
         { label: 'Pengguna', description: 'Kelola akun staff dan akses aplikasi.', path: '/admin/users', show: profile?.role === 'IT', icon: UsersIcon },
-        { label: 'Poliklinik', description: 'Daftar unit layanan untuk pengelompokan jadwal.', path: '/admin/departments', show: profile?.role === 'IT', icon: Building2 },
-        { label: 'Dokter', description: 'Direktori dokter dan relasi ke poliklinik.', path: '/admin/doctors', show: profile?.role === 'IT', icon: Stethoscope },
-        { label: 'Ekspor Jadwal', description: 'Pratinjau jadwal hari ini dan unduh PNG 9:16 untuk IG Story.', path: '/admin/export-schedule', show: profile?.role === 'IT', icon: Download },
-        { label: 'Input Jadwal', description: 'Masukkan jadwal praktik dokter harian.', path: '/nurse/schedule', show: profile?.role === 'NURSE' || profile?.role === 'IT', icon: Calendar },
+        { label: 'Poliklinik', description: 'Daftar unit poliklinik untuk pengelompokan jadwal.', path: '/admin/departments', show: profile?.role === 'IT', icon: Building2 },
+        { label: 'Dokter', description: 'Daftar dokter dan relasi ke poliklinik.', path: '/admin/doctors', show: profile?.role === 'IT', icon: Stethoscope },
+        { label: 'Ekspor Jadwal', description: 'Pratinjau dan ekspor jadwal dokter hari ini.', path: '/admin/export-schedule', show: profile?.role === 'IT', icon: Download },
+        { label: 'Input Jadwal', description: 'Masukkan jadwal praktik dokter.', path: '/nurse/schedule', show: profile?.role === 'NURSE' || profile?.role === 'IT', icon: Calendar },
         { label: 'Semua Jadwal', description: 'Pantau, edit, dan validasi jadwal aktif.', path: '/schedules', show: true, icon: Calendar },
     ].filter((card) => card.show)
 

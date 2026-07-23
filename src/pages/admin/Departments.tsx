@@ -75,7 +75,7 @@ export default function Departments() {
             <section className="page-header">
                 <div>
                     <h1 className="page-title">Manajemen Poliklinik</h1>
-                    <p className="page-subtitle">Kelola unit layanan yang digunakan untuk mengelompokkan dokter dan jadwal publik.</p>
+                    <p className="page-subtitle">Kelola unit layanan poliklinik.</p>
                 </div>
                 <button onClick={() => handleOpenModal()} className="btn btn-primary"><Plus className="mr-2 h-5 w-5" />Tambah Poliklinik</button>
             </section>

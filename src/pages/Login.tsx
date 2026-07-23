@@ -47,7 +47,7 @@ export default function Login() {
                 <div className="mb-8 text-center">
                     <h1 className="text-2xl font-bold text-slate-900">Masuk ke dashboard</h1>
                     <p className="mt-2 text-sm leading-6 text-slate-500">
-                        Gunakan username staff untuk mengakses jadwal dokter dan template HUMAS.
+                        Gunakan username dan password yang benar untuk mengakses jadwal dokter.
                     </p>
                 </div>
 
@@ -66,7 +66,7 @@ export default function Login() {
                                 onChange={(e) => setUsername(e.target.value)}
                                 autoComplete="username"
                                 className="input input-icon-left"
-                                placeholder="admin"
+                                placeholder="username"
                                 required
                             />
                         </div>

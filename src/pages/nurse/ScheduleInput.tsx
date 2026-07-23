@@ -106,7 +106,7 @@ export default function ScheduleInput() {
             <section className="page-header">
                 <div>
                     <h1 className="page-title">Input Jadwal Dokter</h1>
-                    <p className="page-subtitle">Pilih poliklinik, dokter, dan jam praktik. Form dibuat step-by-step agar input harian cepat dan minim salah.</p>
+                    <p className="page-subtitle">Input jadwal dokter poliklinik.</p>
                 </div>
                 <div className="hidden rounded-xl border border-teal-100 bg-teal-50 p-4 text-teal-900 sm:block">
                     <CalendarIcon className="mb-2 h-5 w-5 text-teal-600" />

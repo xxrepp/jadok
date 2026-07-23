@@ -546,7 +546,7 @@ export default function ExportSchedule() {
                 <div>
                     <h1 className="page-title">Ekspor Jadwal</h1>
                     <p className="page-subtitle">
-                        Pratinjau jadwal, lalu unduh gambar 9:16 setelah konfirmasi.
+                        Pratinjau lalu ekspor jadwal dokter.
                     </p>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
