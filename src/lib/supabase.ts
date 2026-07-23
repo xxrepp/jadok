@@ -17,7 +17,7 @@ type LocalProfile = {
     id: string
     email: string | null
     username: string | null
-    role: 'IT' | 'PR' | 'NURSE' | null
+    role: 'HUMAS' | 'PERAWAT' | null
 }
 
 const API_BASE = import.meta.env?.VITE_API_BASE_URL || '/api'

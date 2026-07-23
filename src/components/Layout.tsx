@@ -15,8 +15,8 @@ import {
 import BrandLogo from './BrandLogo'
 
 const displayRole = (role?: string | null) => {
-    if (role === 'PR') return 'HUMAS'
-    if (role === 'NURSE') return 'PERAWAT'
+    if (role === 'HUMAS') return 'HUMAS'
+    if (role === 'PERAWAT') return 'PERAWAT'
     return role || '-'
 }
 
@@ -75,7 +75,7 @@ export default function Layout() {
                             Operasional
                         </div>
 
-                        {profile?.role === 'IT' && (
+                        {profile?.role === 'HUMAS' && (
                             <>
                                 <NavItem to="/admin/users" icon={Users} label="Pengguna" helper="Akun & peran" />
                                 <NavItem to="/admin/departments" icon={Building2} label="Poliklinik" helper="Unit layanan" />
@@ -84,7 +84,7 @@ export default function Layout() {
                             </>
                         )}
 
-                        {(profile?.role === 'NURSE' || profile?.role === 'IT') && (
+                        {(profile?.role === 'PERAWAT' || profile?.role === 'HUMAS') && (
                             <NavItem to="/nurse/schedule" icon={Calendar} label="Input Jadwal" helper="Input jadwal dokter." />
                         )}
 

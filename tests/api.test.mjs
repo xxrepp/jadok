@@ -27,7 +27,7 @@ test('local API supports login, role profile lookup, and protected department cr
     .expect(200)
 
   assert.equal(login.body.user.username, 'admin')
-  assert.equal(login.body.user.role, 'IT')
+  assert.equal(login.body.user.role, 'HUMAS')
 
   const token = login.body.session.access_token
 
@@ -62,7 +62,7 @@ test('local API uses username instead of email for bootstrap, login, and user cr
   const created = await request(app)
     .post('/api/auth/signup')
     .set('Authorization', `Bearer ${token}`)
-    .send({ username: 'nurse1', password: 'secret123', role: 'NURSE' })
+    .send({ username: 'nurse1', password: 'secret123', role: 'PERAWAT' })
     .expect(201)
 
   assert.equal(created.body.user.username, 'nurse1')
@@ -83,7 +83,7 @@ test('local API lets legacy email-only users log in with the email local-part as
   `)
   const passwordHash = await bcrypt.hash('secret123', 10)
   db.prepare('INSERT INTO users (id, email, password_hash, username, role) VALUES (?, ?, ?, ?, ?)')
-    .run('legacy-user', 'xxrepp@rep.com', passwordHash, null, 'IT')
+    .run('legacy-user', 'xxrepp@rep.com', passwordHash, null, 'HUMAS')
 
   const app = createApp({ db, uploadDir: '/tmp/jadok-test-uploads' })
 
@@ -93,7 +93,7 @@ test('local API lets legacy email-only users log in with the email local-part as
     .expect(200)
 
   assert.equal(login.body.user.username, 'xxrepp')
-  assert.equal(login.body.user.role, 'IT')
+  assert.equal(login.body.user.role, 'HUMAS')
 })
 
 test('public viewer endpoint returns schedules grouped with doctor and department data', async () => {

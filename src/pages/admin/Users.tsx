@@ -10,7 +10,7 @@ export default function Users() {
     const [loading, setLoading] = useState(true)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingUser, setEditingUser] = useState<Profile | null>(null)
-    const [formData, setFormData] = useState({ password: '', username: '', role: 'NURSE' as 'IT' | 'PR' | 'NURSE' })
+    const [formData, setFormData] = useState({ password: '', username: '', role: 'PERAWAT' as 'HUMAS' | 'PERAWAT' })
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
     const [saving, setSaving] = useState(false)
@@ -28,10 +28,10 @@ export default function Users() {
 
     const handleOpenModal = (user?: Profile) => {
         setEditingUser(user || null)
-        setFormData({ password: '', username: user?.username || '', role: user?.role || 'NURSE' })
+        setFormData({ password: '', username: user?.username || '', role: user?.role || 'PERAWAT' })
         setIsModalOpen(true); setError(null); setSuccess(null)
     }
-    const handleCloseModal = () => { setIsModalOpen(false); setEditingUser(null); setFormData({ password: '', username: '', role: 'NURSE' }); setError(null); setSuccess(null) }
+    const handleCloseModal = () => { setIsModalOpen(false); setEditingUser(null); setFormData({ password: '', username: '', role: 'PERAWAT' }); setError(null); setSuccess(null) }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault(); setError(null); setSuccess(null); setSaving(true)
@@ -61,8 +61,8 @@ export default function Users() {
         } catch (err: any) { console.error('Error deleting user:', err); setError('Gagal menghapus pengguna. Pastikan Anda memiliki izin.') }
     }
 
-    const roleBadge = (role: string | null) => role === 'IT' ? 'badge-purple' : role === 'PR' ? 'badge-pink' : 'badge-green'
-    const roleLabel = (role: string | null) => role === 'PR' ? 'HUMAS' : role === 'NURSE' ? 'PERAWAT' : role || '-'
+    const roleBadge = (role: string | null) => role === 'HUMAS' ? 'badge-purple' : 'badge-green'
+    const roleLabel = (role: string | null) => role === 'HUMAS' ? 'HUMAS' : role === 'PERAWAT' ? 'PERAWAT' : role || '-'
 
     return (
         <div className="page-shell">
@@ -80,12 +80,11 @@ export default function Users() {
 
             {isModalOpen && <div className="modal-backdrop"><div className="modal-card"><div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-semibold">{editingUser ? 'Edit Pengguna' : 'Buat Pengguna'}</h2><button onClick={handleCloseModal} className="action-icon"><X className="h-5 w-5" /></button></div>{error && <div className="alert-error mb-4">{error}</div>}{success && <div className="alert-success mb-4">{success}</div>}<form onSubmit={handleSubmit} className="space-y-5"><div><label className="mb-2 block text-sm font-bold text-slate-700">Username</label><input type="text" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} className="input" /></div>{!editingUser && <div><label className="mb-2 block text-sm font-bold text-slate-700">Kata Sandi</label><input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="input" required /></div>}<div><label className="mb-2 block text-sm font-bold text-slate-700">Peran</label><select
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'IT' | 'PR' | 'NURSE' })}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'HUMAS' | 'PERAWAT' })}
                   className="input"
                 >
-                  <option value="NURSE">PERAWAT</option>
-                  <option value="IT">Admin IT</option>
-                  {editingUser?.role === 'PR' && <option value="PR">HUMAS</option>}
+                  <option value="PERAWAT">Perawat</option>
+                  <option value="HUMAS">Humas</option>
                 </select></div><div className="flex justify-end gap-3"><button type="button" onClick={handleCloseModal} className="btn btn-secondary">Batal</button><button type="submit" disabled={saving} className="btn btn-primary"><Save className="mr-2 h-4 w-4" />{saving ? 'Menyimpan...' : 'Simpan'}</button></div></form></div></div>}
         </div>
     )

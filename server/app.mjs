@@ -318,7 +318,7 @@ export function createApp({ db, uploadDir = path.resolve('uploads'), staticDir =
       const passwordHash = await bcrypt.hash(password, 10)
       const id = nanoid()
       db.prepare('INSERT INTO users (id, email, password_hash, username, role) VALUES (?, ?, ?, ?, ?)')
-        .run(id, internalEmailForUsername(username), passwordHash, username, 'IT')
+        .run(id, internalEmailForUsername(username), passwordHash, username, 'HUMAS')
       res.status(201).json(toPublicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(id)))
     } catch (error) { next(error) }
   })
@@ -363,11 +363,11 @@ export function createApp({ db, uploadDir = path.resolve('uploads'), staticDir =
     res.json({ ok: true })
   })
 
-  app.post('/api/auth/signup', requireAuth, requireRole('IT'), async (req, res, next) => {
+  app.post('/api/auth/signup', requireAuth, requireRole('HUMAS'), async (req, res, next) => {
     try {
-      const { password, role = 'NURSE' } = req.body
+      const { password, role = 'PERAWAT' } = req.body
       const username = normalizeUsername(req.body.username ?? req.body.email)
-      if (!['IT', 'PR', 'NURSE'].includes(role)) return res.status(400).json({ error: 'Invalid role' })
+      if (!['HUMAS', 'PERAWAT'].includes(role)) return res.status(400).json({ error: 'Invalid role' })
       if (!username || !password || password.length < 6) return res.status(400).json({ error: 'Username and password length >= 6 required' })
       const id = nanoid()
       const passwordHash = await bcrypt.hash(password, 10)
@@ -385,7 +385,9 @@ export function createApp({ db, uploadDir = path.resolve('uploads'), staticDir =
     } catch (error) { next(error) }
   })
 
-  app.post('/api/uploads/templates', requireAuth, requireRole('IT', 'PR'), upload.single('file'), (req, res) => {
+  // Template module is dormant (kept for possible future use).
+  // Previously: requireRole('IT', 'PR')
+  app.post('/api/uploads/templates', requireAuth, requireRole('HUMAS'), upload.single('file'), (req, res) => {
     const file = req.file
     if (!file) return res.status(400).json({ error: 'Missing file' })
     const ext = path.extname(file.originalname) || `.${file.mimetype.split('/')[1] || 'png'}`
@@ -408,7 +410,7 @@ export function createApp({ db, uploadDir = path.resolve('uploads'), staticDir =
     try {
       const table = req.params.table
       if (!TABLES.has(table)) return res.status(404).json({ error: 'Unknown table' })
-      if (table === 'profiles' && req.user.role !== 'IT') return res.status(403).json({ error: 'Forbidden' })
+      if (table === 'profiles' && req.user.role !== 'HUMAS') return res.status(403).json({ error: 'Forbidden' })
       const payloads = Array.isArray(req.body) ? req.body : [req.body]
       const rows = payloads.map((payload) => createRow(db, table, payload, req.user))
       res.status(201).json(Array.isArray(req.body) ? rows : rows[0])
@@ -431,7 +433,7 @@ export function createApp({ db, uploadDir = path.resolve('uploads'), staticDir =
     } catch (error) { next(error) }
   })
 
-  app.post('/api/rpc/delete_user_account', requireAuth, requireRole('IT'), (req, res, next) => {
+  app.post('/api/rpc/delete_user_account', requireAuth, requireRole('HUMAS'), (req, res, next) => {
     try {
       const userId = req.body.user_id
       if (!userId) return res.status(400).json({ error: 'user_id required' })
@@ -440,7 +442,9 @@ export function createApp({ db, uploadDir = path.resolve('uploads'), staticDir =
     } catch (error) { next(error) }
   })
 
-  app.post('/api/rpc/copy_template_zones', requireAuth, requireRole('IT', 'PR'), (req, res, next) => {
+  // Template module is dormant (kept for possible future use).
+  // Previously: requireRole('IT', 'PR')
+  app.post('/api/rpc/copy_template_zones', requireAuth, requireRole('HUMAS'), (req, res, next) => {
     try {
       const result = copyTemplateZones(db, req.body.source_template_id, req.body.target_template_id, {
         replaceExisting: Boolean(req.body.replace_existing),

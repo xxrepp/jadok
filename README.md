@@ -4,10 +4,9 @@ Web app for managing and publishing doctor schedules in Indonesian healthcare/cl
 
 ## Features
 
-**Three user roles:**
-- **IT/Admin** — manage users, departments, doctors
-- **PERAWAT (Nurse)** — input daily schedules
-- **HUMAS (PR)** — design schedule templates, export branded images
+**Two user roles:**
+- **HUMAS** — admin: manage users, departments, doctors, export schedule, and can also input schedules
+- **PERAWAT** — input daily schedules
 - **Public viewer** — display today's schedule (no login required)
 
 **Key capabilities:**

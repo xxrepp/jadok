@@ -12,8 +12,9 @@ import ExportSchedule from './pages/admin/ExportSchedule'
 
 import ScheduleInput from './pages/nurse/ScheduleInput'
 
-import Templates from './pages/pr/Templates'
-import TemplateEditor from './pages/pr/TemplateEditor'
+// Template module is dormant (kept for possible future use).
+// import Templates from './pages/pr/Templates'
+// import TemplateEditor from './pages/pr/TemplateEditor'
 import ScheduleList from './pages/shared/ScheduleList'
 import { Users as UsersIcon, Stethoscope, Building2, Calendar, Download, ArrowRight } from 'lucide-react'
 
@@ -21,12 +22,14 @@ import Viewer from './pages/public/Viewer'
 
 function DashboardHome() {
     const { profile } = useAuth()
+    const isHumas = profile?.role === 'HUMAS'
+    const canInputSchedule = isHumas || profile?.role === 'PERAWAT'
     const cards = [
-        { label: 'Pengguna', description: 'Kelola akun staff dan akses aplikasi.', path: '/admin/users', show: profile?.role === 'IT', icon: UsersIcon },
-        { label: 'Poliklinik', description: 'Daftar unit poliklinik untuk pengelompokan jadwal.', path: '/admin/departments', show: profile?.role === 'IT', icon: Building2 },
-        { label: 'Dokter', description: 'Daftar dokter dan relasi ke poliklinik.', path: '/admin/doctors', show: profile?.role === 'IT', icon: Stethoscope },
-        { label: 'Ekspor Jadwal', description: 'Pratinjau dan ekspor jadwal dokter hari ini.', path: '/admin/export-schedule', show: profile?.role === 'IT', icon: Download },
-        { label: 'Input Jadwal', description: 'Masukkan jadwal praktik dokter.', path: '/nurse/schedule', show: profile?.role === 'NURSE' || profile?.role === 'IT', icon: Calendar },
+        { label: 'Pengguna', description: 'Kelola akun staff dan akses aplikasi.', path: '/admin/users', show: isHumas, icon: UsersIcon },
+        { label: 'Poliklinik', description: 'Daftar unit poliklinik untuk pengelompokan jadwal.', path: '/admin/departments', show: isHumas, icon: Building2 },
+        { label: 'Dokter', description: 'Daftar dokter dan relasi ke poliklinik.', path: '/admin/doctors', show: isHumas, icon: Stethoscope },
+        { label: 'Ekspor Jadwal', description: 'Pratinjau dan ekspor jadwal dokter hari ini.', path: '/admin/export-schedule', show: isHumas, icon: Download },
+        { label: 'Input Jadwal', description: 'Masukkan jadwal praktik dokter.', path: '/nurse/schedule', show: canInputSchedule, icon: Calendar },
         { label: 'Semua Jadwal', description: 'Pantau, edit, dan validasi jadwal aktif.', path: '/schedules', show: true, icon: Calendar },
     ].filter((card) => card.show)
 
@@ -36,7 +39,7 @@ function DashboardHome() {
                 <div>
                     <h1 className="page-title">Dashboard Jadwal Dokter</h1>
                     <p className="page-subtitle">
-                        Pilih menu kerja untuk mengelola jadwal, data dokter, pengguna, dan template publikasi.
+                        Pilih menu kerja untuk mengelola jadwal, data dokter, dan pengguna.
                     </p>
                 </div>
             </section>
@@ -76,7 +79,7 @@ function App() {
                         <Route element={<Layout />}>
                             <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-                            <Route element={<ProtectedRoute allowedRoles={['IT']} />}>
+                            <Route element={<ProtectedRoute allowedRoles={['HUMAS']} />}>
                                 <Route path="/admin" element={<DashboardHome />} />
                                 <Route path="/admin/users" element={<AdminUsers />} />
                                 <Route path="/admin/departments" element={<Departments />} />
@@ -84,14 +87,16 @@ function App() {
                                 <Route path="/admin/export-schedule" element={<ExportSchedule />} />
                             </Route>
 
-                            <Route element={<ProtectedRoute allowedRoles={['NURSE', 'IT']} />}>
+                            <Route element={<ProtectedRoute allowedRoles={['PERAWAT', 'HUMAS']} />}>
                                 <Route path="/nurse/schedule" element={<ScheduleInput />} />
                             </Route>
 
-                            <Route element={<ProtectedRoute allowedRoles={['PR', 'IT']} />}>
+                            {/* Template module is dormant (kept for possible future use).
+                            <Route element={<ProtectedRoute allowedRoles={['HUMAS']} />}>
                                 <Route path="/pr" element={<Templates />} />
                                 <Route path="/pr/editor/:id" element={<TemplateEditor />} />
                             </Route>
+                            */}
 
                             <Route path="/dashboard" element={<DashboardHome />} />
                             <Route path="/schedules" element={<ScheduleList />} />

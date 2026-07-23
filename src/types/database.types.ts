@@ -13,19 +13,19 @@ export interface Database {
                 Row: {
                     id: string
                     username: string | null
-                    role: 'IT' | 'PR' | 'NURSE' | null
+                    role: 'HUMAS' | 'PERAWAT' | null
                     email: string | null
                 }
                 Insert: {
                     id: string
                     username?: string | null
-                    role?: 'IT' | 'PR' | 'NURSE' | null
+                    role?: 'HUMAS' | 'PERAWAT' | null
                     email?: string | null
                 }
                 Update: {
                     id?: string
                     username?: string | null
-                    role?: 'IT' | 'PR' | 'NURSE' | null
+                    role?: 'HUMAS' | 'PERAWAT' | null
                     email?: string | null
                 }
             }
