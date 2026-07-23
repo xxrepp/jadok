@@ -46,12 +46,13 @@ const C = {
     accent: '#0f766e',
 }
 
-const HERO_BOTTOM = 300
-const SHEET_INSET = 48
-const SHEET_TOP = 300
-const SHEET_BOTTOM_PAD = 64
+const HERO_BOTTOM = 360
+const SHEET_INSET = 80
+const SHEET_TOP = 340
+const SHEET_BOTTOM_PAD = 40
 const SHEET_RADIUS = 36
-const SHEET_INNER_PAD = 28
+const SHEET_INNER_PAD = 24
+const CHIP_SHEET_GAP = 22
 
 function pickDensityMode(totalDoctors: number, deptCount: number): DensityMode {
     if (totalDoctors <= 10 && deptCount <= 6) return 'comfortable'
@@ -284,10 +285,14 @@ export default function ExportSchedule() {
         const mode = pickDensityMode(totalDoctors, deptCount)
         let metrics = baseMetrics(mode, deptCount)
 
+        // Hero metrics first so sheet top can sit below the chip (never overlaps it)
+        const titleY = logo ? 160 : 88
+        const chipH = 40
+        const chipY = titleY + 118
         const sheetX = SHEET_INSET
-        const sheetY = SHEET_TOP
+        const sheetY = Math.max(SHEET_TOP, chipY + chipH + CHIP_SHEET_GAP)
         const sheetW = STORY_WIDTH - SHEET_INSET * 2
-        const sheetH = STORY_HEIGHT - SHEET_TOP - SHEET_BOTTOM_PAD
+        const sheetH = STORY_HEIGHT - sheetY - SHEET_BOTTOM_PAD
         const contentW = sheetW - SHEET_INNER_PAD * 2
         const contentInnerH = sheetH - SHEET_INNER_PAD * 2
 
@@ -319,7 +324,7 @@ export default function ExportSchedule() {
         heroGlow.addColorStop(0, 'rgba(255,255,255,0.18)')
         heroGlow.addColorStop(1, 'rgba(255,255,255,0)')
         ctx.fillStyle = heroGlow
-        ctx.fillRect(0, 0, STORY_WIDTH, HERO_BOTTOM)
+        ctx.fillRect(0, 0, STORY_WIDTH, Math.max(HERO_BOTTOM, sheetY))
 
         // 2. Hero band
         ctx.textAlign = 'center'
@@ -334,7 +339,6 @@ export default function ExportSchedule() {
             ctx.drawImage(logo, boxX + pad, boxY + pad, box - pad * 2, box - pad * 2)
         }
 
-        const titleY = logo ? 160 : 88
         ctx.fillStyle = C.surface
         ctx.font = 'bold 56px Inter, system-ui, sans-serif'
         ctx.fillText('Jadwal Dokter', STORY_WIDTH / 2, titleY)
@@ -350,16 +354,14 @@ export default function ExportSchedule() {
         ctx.font = 'bold 22px Inter, system-ui, sans-serif'
         const chipPadX = 22
         const chipW = Math.min(contentW, ctx.measureText(chipLabel).width + chipPadX * 2)
-        const chipH = 40
         const chipX = (STORY_WIDTH - chipW) / 2
-        const chipY = titleY + 118
         fillRoundRect(ctx, chipX, chipY, chipW, chipH, 20, C.primarySoft)
         ctx.fillStyle = C.accent
         ctx.textBaseline = 'middle'
         ctx.fillText(chipLabel, STORY_WIDTH / 2, chipY + chipH / 2)
         ctx.textBaseline = 'top'
 
-        // 3. Content sheet
+        // 3. Content sheet (starts below chip so badge stays fully visible)
         fillRoundRect(ctx, sheetX, sheetY, sheetW, sheetH, SHEET_RADIUS, C.surface)
         strokeRoundRect(ctx, sheetX, sheetY, sheetW, sheetH, SHEET_RADIUS, C.border, 2)
 
@@ -483,15 +485,6 @@ export default function ExportSchedule() {
         }
 
         ctx.restore()
-
-        // 7. Footer brand
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        ctx.fillStyle = C.muted
-        ctx.font = '22px Inter, system-ui, sans-serif'
-        ctx.fillText('Jadwal Dokter · JADOK', STORY_WIDTH / 2, STORY_HEIGHT - SHEET_BOTTOM_PAD / 2)
-        ctx.textAlign = 'left'
-        ctx.textBaseline = 'top'
     }
 
     const renderStoryPng = async (): Promise<string> => {
