@@ -31,7 +31,6 @@ type DensityMetrics = {
 
 const STORY_WIDTH = 1080
 const STORY_HEIGHT = 1920
-// Full brand wordmark — same asset as login/dashboard (not the square small mark).
 const LOGO_SRC = '/assets/jadok%20logo.png'
 const FOOTER_SRC = '/assets/footer.png'
 
@@ -56,11 +55,11 @@ const SHEET_RADIUS = 36
 const SHEET_INNER_PAD = 24
 const CHIP_SHEET_GAP = 12
 const FOOTER_TOP_GAP = 18
-// Login BrandLogo is h-20 w-72 (80×288). Story scales that proportion for 1080 width.
-const LOGO_PLATE_W = 420
+const LOGO_PLATE_W_MAX = 420
 const LOGO_PLATE_H = 117
 const LOGO_PLATE_Y = 44
 const LOGO_IMG_SCALE = 2.45
+const LOGO_PLATE_ASPECT = LOGO_PLATE_W_MAX / LOGO_PLATE_H
 const TITLE_FONT_PX = 56
 const TITLE_LINE_GAP = 10
 const TITLE_TO_DATE_GAP = 18
@@ -344,12 +343,16 @@ export default function ExportSchedule() {
         const mode = pickDensityMode(totalDoctors, deptCount)
         let metrics = baseMetrics(mode, deptCount)
 
-        // Hero metrics first so sheet top can sit below the chip (never overlaps it)
-        const logoPlateW = LOGO_PLATE_W
-        const logoPlateH = LOGO_PLATE_H
-        const logoPlateY = LOGO_PLATE_Y
         const titleFont = TITLE_FONT_PX
         const titleLineGap = TITLE_LINE_GAP
+        ctx.font = `bold ${titleFont}px Inter, system-ui, sans-serif`
+        const titleWidth = ctx.measureText('Jadwal Dokter').width
+        const logoPlateW = Math.min(
+            LOGO_PLATE_W_MAX,
+            Math.max(240, Math.round(titleWidth * 0.88)),
+        )
+        const logoPlateH = Math.round(logoPlateW / LOGO_PLATE_ASPECT)
+        const logoPlateY = LOGO_PLATE_Y
         const titleY = logo ? logoPlateY + logoPlateH + 20 : 72
         const subtitleY = titleY + titleFont + titleLineGap
         const dateY = subtitleY + titleFont + TITLE_TO_DATE_GAP
@@ -363,7 +366,6 @@ export default function ExportSchedule() {
         const contentX = sheetX + SHEET_INNER_PAD
         const contentY = sheetY + SHEET_INNER_PAD
 
-        // Footer sits inside the white modal, aligned to content width (doctor/time columns).
         let footerDrawW = 0
         let footerDrawH = 0
         if (footer) {
@@ -384,7 +386,6 @@ export default function ExportSchedule() {
         }
         metrics = scaleMetrics(metrics, scale)
 
-        // 1. Vertical gradient background
         const bg = ctx.createLinearGradient(0, 0, 0, STORY_HEIGHT)
         bg.addColorStop(0, C.bgTop)
         bg.addColorStop(0.22, C.bgTopDeep)
@@ -393,7 +394,6 @@ export default function ExportSchedule() {
         ctx.fillStyle = bg
         ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT)
 
-        // Soft hero glow
         const heroGlow = ctx.createRadialGradient(
             STORY_WIDTH / 2,
             140,
@@ -407,14 +407,12 @@ export default function ExportSchedule() {
         ctx.fillStyle = heroGlow
         ctx.fillRect(0, 0, STORY_WIDTH, Math.max(HERO_BOTTOM, sheetY))
 
-        // 2. Hero band
         ctx.textAlign = 'center'
         ctx.textBaseline = 'top'
 
         if (logo) {
             const plateX = (STORY_WIDTH - logoPlateW) / 2
             fillRoundRect(ctx, plateX, logoPlateY, logoPlateW, logoPlateH, 24, C.surface)
-            // Match login BrandLogo: object-contain + scale-[2.45], clipped to white plate.
             drawImageContainScaled(
                 ctx,
                 logo,
@@ -449,7 +447,6 @@ export default function ExportSchedule() {
         ctx.fillText(chipLabel, STORY_WIDTH / 2, chipY + chipH / 2)
         ctx.textBaseline = 'top'
 
-        // 3. Content sheet (starts below chip so badge stays fully visible)
         fillRoundRect(ctx, sheetX, sheetY, sheetW, sheetH, SHEET_RADIUS, C.surface)
         strokeRoundRect(ctx, sheetX, sheetY, sheetW, sheetH, SHEET_RADIUS, C.border, 2)
 
@@ -460,13 +457,11 @@ export default function ExportSchedule() {
             fillRoundRect(ctx, x, y, w, h, r, C.surface)
             strokeRoundRect(ctx, x, y, w, h, r, C.border, 2)
 
-            // Teal left accent
             ctx.save()
             roundRect(ctx, x, y, w, h, r)
             ctx.clip()
             ctx.fillStyle = C.accent
             ctx.fillRect(x, y, 8, h)
-            // Soft header strip
             ctx.fillStyle = C.surfaceSoft
             ctx.fillRect(x + 8, y, w - 8, metrics.deptHeaderH)
             ctx.restore()
@@ -537,7 +532,6 @@ export default function ExportSchedule() {
             fillRoundRect(ctx, cx - 40, cy - 90, 80, 80, 24, C.surfaceSoft)
             ctx.strokeStyle = C.accent
             ctx.lineWidth = 3
-            // Simple calendar outline
             roundRect(ctx, cx - 22, cy - 72, 44, 40, 8)
             ctx.stroke()
             ctx.beginPath()
@@ -569,7 +563,6 @@ export default function ExportSchedule() {
             }
         }
 
-        // Footer banner: bottom of white modal, content-width only (aligned with names/times).
         if (footer && footerDrawH > 0) {
             const footerX = contentX
             const footerY = sheetY + sheetH - SHEET_INNER_PAD - footerDrawH
