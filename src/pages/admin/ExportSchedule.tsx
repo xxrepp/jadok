@@ -31,7 +31,9 @@ type DensityMetrics = {
 
 const STORY_WIDTH = 1080
 const STORY_HEIGHT = 1920
-const LOGO_SRC = '/assets/jadok%20small%20logo.png'
+// Full brand wordmark — same asset as login/dashboard (not the square small mark).
+const LOGO_SRC = '/assets/jadok%20logo.png'
+const FOOTER_SRC = '/assets/footer.png'
 
 const C = {
     bgTop: '#0d9488',
@@ -46,13 +48,25 @@ const C = {
     accent: '#0f766e',
 }
 
-const HERO_BOTTOM = 340
+const HERO_BOTTOM = 520
 const SHEET_INSET = 80
-const SHEET_TOP = 320
+const SHEET_TOP = 360
 const SHEET_BOTTOM_PAD = 40
 const SHEET_RADIUS = 36
 const SHEET_INNER_PAD = 24
-const CHIP_SHEET_GAP = 22
+const CHIP_SHEET_GAP = 12
+const FOOTER_TOP_GAP = 18
+// Login BrandLogo is h-20 w-72 (80×288). Story scales that proportion for 1080 width.
+const LOGO_PLATE_W = 420
+const LOGO_PLATE_H = 117
+const LOGO_PLATE_Y = 44
+const LOGO_IMG_SCALE = 2.45
+const TITLE_FONT_PX = 56
+const TITLE_LINE_GAP = 10
+const TITLE_TO_DATE_GAP = 18
+const DATE_TO_CHIP_GAP = 18
+const DATE_FONT_PX = 28
+const CHIP_H = 40
 
 function pickDensityMode(totalDoctors: number, deptCount: number): DensityMode {
     if (totalDoctors <= 10 && deptCount <= 6) return 'comfortable'
@@ -133,13 +147,21 @@ function estimateContentHeight(groups: GroupedSchedule[], m: DensityMetrics): nu
     return Math.max(colH[0], colH[1]) - m.cardGap
 }
 
-function loadLogo(): Promise<HTMLImageElement | null> {
+function loadImage(src: string): Promise<HTMLImageElement | null> {
     return new Promise((resolve) => {
         const img = new Image()
         img.onload = () => resolve(img)
         img.onerror = () => resolve(null)
-        img.src = LOGO_SRC
+        img.src = src
     })
+}
+
+function loadLogo() {
+    return loadImage(LOGO_SRC)
+}
+
+function loadFooter() {
+    return loadImage(FOOTER_SRC)
 }
 
 function roundRect(
@@ -217,14 +239,15 @@ function drawTruncatedText(
     ctx.fillText(best || '…', x, y)
 }
 
-/** Draw image inside a box without stretching (object-contain). */
-function drawImageContain(
+/** Like BrandLogo brand variant: object-contain then CSS scale, clipped to plate. */
+function drawImageContainScaled(
     ctx: CanvasRenderingContext2D,
     img: HTMLImageElement,
     x: number,
     y: number,
     w: number,
     h: number,
+    scale: number,
 ) {
     const iw = img.naturalWidth || img.width
     const ih = img.naturalHeight || img.height
@@ -239,9 +262,17 @@ function drawImageContain(
     } else {
         dw = h * imageRatio
     }
+    dw *= scale
+    dh *= scale
     const dx = x + (w - dw) / 2
     const dy = y + (h - dh) / 2
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(x, y, w, h)
+    ctx.clip()
     ctx.drawImage(img, dx, dy, dw, dh)
+    ctx.restore()
 }
 
 export default function ExportSchedule() {
@@ -307,23 +338,44 @@ export default function ExportSchedule() {
     const paintStoryCanvas = (
         ctx: CanvasRenderingContext2D,
         logo: HTMLImageElement | null,
+        footer: HTMLImageElement | null,
     ) => {
         const deptCount = groupedSchedules.length
         const mode = pickDensityMode(totalDoctors, deptCount)
         let metrics = baseMetrics(mode, deptCount)
 
         // Hero metrics first so sheet top can sit below the chip (never overlaps it)
-        const logoBox = 96
-        const logoBoxY = 56
-        const titleY = logo ? logoBoxY + logoBox + 18 : 88
-        const chipH = 40
-        const chipY = titleY + 118
+        const logoPlateW = LOGO_PLATE_W
+        const logoPlateH = LOGO_PLATE_H
+        const logoPlateY = LOGO_PLATE_Y
+        const titleFont = TITLE_FONT_PX
+        const titleLineGap = TITLE_LINE_GAP
+        const titleY = logo ? logoPlateY + logoPlateH + 20 : 72
+        const subtitleY = titleY + titleFont + titleLineGap
+        const dateY = subtitleY + titleFont + TITLE_TO_DATE_GAP
+        const chipH = CHIP_H
+        const chipY = dateY + DATE_FONT_PX + DATE_TO_CHIP_GAP
         const sheetX = SHEET_INSET
         const sheetY = Math.max(SHEET_TOP, chipY + chipH + CHIP_SHEET_GAP)
         const sheetW = STORY_WIDTH - SHEET_INSET * 2
         const sheetH = STORY_HEIGHT - sheetY - SHEET_BOTTOM_PAD
         const contentW = sheetW - SHEET_INNER_PAD * 2
-        const contentInnerH = sheetH - SHEET_INNER_PAD * 2
+        const contentX = sheetX + SHEET_INNER_PAD
+        const contentY = sheetY + SHEET_INNER_PAD
+
+        // Footer sits inside the white modal, aligned to content width (doctor/time columns).
+        let footerDrawW = 0
+        let footerDrawH = 0
+        if (footer) {
+            const iw = footer.naturalWidth || footer.width
+            const ih = footer.naturalHeight || footer.height
+            if (iw > 0 && ih > 0) {
+                footerDrawW = contentW
+                footerDrawH = footerDrawW * (ih / iw)
+            }
+        }
+        const footerBlock = footerDrawH > 0 ? footerDrawH + FOOTER_TOP_GAP : 0
+        const contentInnerH = sheetH - SHEET_INNER_PAD * 2 - footerBlock
 
         let scale = 1
         const estimated = estimateContentHeight(groupedSchedules, metrics)
@@ -360,22 +412,28 @@ export default function ExportSchedule() {
         ctx.textBaseline = 'top'
 
         if (logo) {
-            const box = logoBox
-            const boxX = (STORY_WIDTH - box) / 2
-            const boxY = logoBoxY
-            fillRoundRect(ctx, boxX, boxY, box, box, 24, C.surface)
-            const pad = 10
-            // Use original small logo as-is; contain keeps aspect (no stretch).
-            drawImageContain(ctx, logo, boxX + pad, boxY + pad, box - pad * 2, box - pad * 2)
+            const plateX = (STORY_WIDTH - logoPlateW) / 2
+            fillRoundRect(ctx, plateX, logoPlateY, logoPlateW, logoPlateH, 24, C.surface)
+            // Match login BrandLogo: object-contain + scale-[2.45], clipped to white plate.
+            drawImageContainScaled(
+                ctx,
+                logo,
+                plateX,
+                logoPlateY,
+                logoPlateW,
+                logoPlateH,
+                LOGO_IMG_SCALE,
+            )
         }
 
         ctx.fillStyle = C.surface
-        ctx.font = 'bold 56px Inter, system-ui, sans-serif'
+        ctx.font = `bold ${titleFont}px Inter, system-ui, sans-serif`
         ctx.fillText('Jadwal Dokter', STORY_WIDTH / 2, titleY)
+        ctx.fillText('Poliklinik Rawat Jalan', STORY_WIDTH / 2, subtitleY)
 
         ctx.fillStyle = 'rgba(255,255,255,0.9)'
-        ctx.font = '28px Inter, system-ui, sans-serif'
-        ctx.fillText(formatLongDateID(exportDate), STORY_WIDTH / 2, titleY + 72)
+        ctx.font = `${DATE_FONT_PX}px Inter, system-ui, sans-serif`
+        ctx.fillText(formatLongDateID(exportDate), STORY_WIDTH / 2, dateY)
 
         const chipLabel =
             deptCount > 0
@@ -394,9 +452,6 @@ export default function ExportSchedule() {
         // 3. Content sheet (starts below chip so badge stays fully visible)
         fillRoundRect(ctx, sheetX, sheetY, sheetW, sheetH, SHEET_RADIUS, C.surface)
         strokeRoundRect(ctx, sheetX, sheetY, sheetW, sheetH, SHEET_RADIUS, C.border, 2)
-
-        const contentX = sheetX + SHEET_INNER_PAD
-        const contentY = sheetY + SHEET_INNER_PAD
 
         const paintCard = (group: GroupedSchedule, x: number, y: number, w: number) => {
             const h = cardHeight(group.schedules.length, metrics)
@@ -478,7 +533,7 @@ export default function ExportSchedule() {
             ctx.textAlign = 'center'
             ctx.textBaseline = 'middle'
             const cx = sheetX + sheetW / 2
-            const cy = sheetY + sheetH / 2
+            const cy = sheetY + (sheetH - footerBlock) / 2
             fillRoundRect(ctx, cx - 40, cy - 90, 80, 80, 24, C.surfaceSoft)
             ctx.strokeStyle = C.accent
             ctx.lineWidth = 3
@@ -514,6 +569,13 @@ export default function ExportSchedule() {
             }
         }
 
+        // Footer banner: bottom of white modal, content-width only (aligned with names/times).
+        if (footer && footerDrawH > 0) {
+            const footerX = contentX
+            const footerY = sheetY + sheetH - SHEET_INNER_PAD - footerDrawH
+            ctx.drawImage(footer, footerX, footerY, footerDrawW, footerDrawH)
+        }
+
         ctx.restore()
     }
 
@@ -526,8 +588,8 @@ export default function ExportSchedule() {
         canvas.width = STORY_WIDTH
         canvas.height = STORY_HEIGHT
 
-        const logo = await loadLogo()
-        paintStoryCanvas(ctx, logo)
+        const [logo, footer] = await Promise.all([loadLogo(), loadFooter()])
+        paintStoryCanvas(ctx, logo, footer)
         return canvas.toDataURL('image/png')
     }
 
