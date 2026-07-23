@@ -662,69 +662,80 @@ export default function ExportSchedule() {
 
             {exportError && !previewOpen && <div className="alert-error mb-4">{exportError}</div>}
 
-            <div className="mx-auto w-full max-w-[360px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="border-b border-slate-100 bg-[var(--app-bg)] px-5 py-5">
-                    <div className="flex items-center gap-3">
-                        <BrandLogo variant="icon" className="h-11 w-11 shrink-0 rounded-xl border border-slate-200" />
+            <section className="mx-auto w-full max-w-7xl">
+                <div className="page-header mb-4">
+                    <div className="flex items-center gap-4">
+                        <BrandLogo variant="icon" className="hidden h-11 w-11 shrink-0 rounded-xl border border-slate-200 sm:inline-flex" />
                         <div>
-                            <h2 className="text-lg font-semibold text-slate-900">Jadwal Dokter</h2>
+                            <h2 className="text-xl font-semibold text-slate-900">Jadwal Dokter</h2>
                             <p className="text-sm text-slate-500">{formatLongDateID(exportDate)}</p>
                         </div>
                     </div>
-                    <div className="mt-4 inline-flex items-center gap-2 rounded-xl border border-teal-100 bg-teal-50 px-3 py-2 text-teal-800">
-                        <Stethoscope className="h-4 w-4 text-teal-600" />
-                        <span className="text-sm font-semibold">{totalDoctors} dokter</span>
+                    <div className="rounded-xl border border-teal-100 bg-teal-50 px-4 py-3 text-teal-900">
+                        <div className="flex items-center gap-2">
+                            <Stethoscope className="h-4 w-4 text-teal-600" />
+                            <span className="text-xl font-semibold">{totalDoctors}</span>
+                        </div>
+                        <p className="text-xs text-teal-700">Dokter</p>
                     </div>
                 </div>
 
-                <div className="min-h-[420px] p-4">
-                    {loading ? (
-                        <div className="flex min-h-[360px] items-center justify-center text-sm font-medium text-slate-500">
-                            Memuat jadwal...
+                {loading ? (
+                    <div className="panel flex min-h-[40vh] items-center justify-center text-sm font-medium text-slate-500">
+                        Memuat jadwal...
+                    </div>
+                ) : error ? (
+                    <div className="alert-error flex min-h-[40vh] items-center justify-center text-center text-lg font-semibold">
+                        {error}
+                    </div>
+                ) : groupedSchedules.length === 0 ? (
+                    <div className="panel flex min-h-[40vh] flex-col items-center justify-center text-center">
+                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+                            <CalendarDays className="h-8 w-8" />
                         </div>
-                    ) : error ? (
-                        <div className="flex min-h-[360px] items-center justify-center text-center text-sm font-semibold text-red-600">
-                            {error}
-                        </div>
-                    ) : groupedSchedules.length === 0 ? (
-                        <div className="flex min-h-[360px] flex-col items-center justify-center text-center">
-                            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
-                                <CalendarDays className="h-6 w-6" />
-                            </div>
-                            <p className="text-base font-semibold text-slate-900">Tidak ada jadwal dokter pada tanggal ini.</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {groupedSchedules.map((group) => (
-                                <div key={group.department} className="overflow-hidden rounded-xl border border-slate-200 border-l-4 border-l-teal-500">
-                                    <div className="border-b border-teal-100 bg-teal-50 px-4 py-3">
-                                        <p className="text-[11px] font-medium text-teal-700">Poliklinik</p>
-                                        <h3 className="truncate text-base font-semibold text-slate-900" title={group.department}>
-                                            {group.department}
-                                        </h3>
-                                    </div>
-                                    <div className="divide-y divide-slate-100">
-                                        {group.schedules.map((schedule) => (
-                                            <div
-                                                key={schedule.id}
-                                                className="flex items-center justify-between gap-3 px-4 py-3"
-                                            >
-                                                <p className="min-w-0 truncate text-sm font-semibold text-slate-900">
-                                                    {schedule.doctors?.name}
-                                                </p>
-                                                <div className="inline-flex shrink-0 items-center rounded-lg border border-teal-100 bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-800">
-                                                    <Clock className="mr-1.5 h-3.5 w-3.5 text-teal-600" />
-                                                    {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
+                        <h2 className="text-2xl font-semibold text-slate-900">Tidak ada jadwal dokter pada tanggal ini.</h2>
+                        <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
+                            Pilih tanggal lain, atau pastikan jadwal sudah diinput.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                        {groupedSchedules.map((group) => (
+                            <div key={group.department} className="card flex h-full flex-col">
+                                <div className="border-b border-teal-100 bg-teal-50 px-5 py-4">
+                                    <p className="text-xs font-medium text-teal-700">Poliklinik</p>
+                                    <h3 className="mt-1 truncate text-xl font-semibold text-slate-900" title={group.department}>
+                                        {group.department}
+                                    </h3>
+                                </div>
+                                <div className="flex-1 divide-y divide-slate-100 p-2">
+                                    {group.schedules.map((schedule) => (
+                                        <div key={schedule.id} className="rounded-lg p-4 transition-colors hover:bg-teal-50/50">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="min-w-0">
+                                                    <h4
+                                                        className="truncate text-base font-semibold text-slate-900"
+                                                        title={schedule.doctors?.name || '-'}
+                                                    >
+                                                        {schedule.doctors?.name || '-'}
+                                                    </h4>
+                                                    <div className="mt-2 inline-flex items-center rounded-lg border border-teal-100 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-800">
+                                                        <Clock className="mr-1.5 h-4 w-4 text-teal-600" />
+                                                        {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
+                                                    </div>
+                                                </div>
+                                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                                                    <Stethoscope className="h-4 w-4" />
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </section>
 
             <canvas ref={canvasRef} className="hidden" />
 
@@ -741,7 +752,7 @@ export default function ExportSchedule() {
                             </button>
                         </div>
                         <p className="mb-4 text-sm text-slate-500">
-                            Ekspor jadwal untuk hari ini. — {formatLongDateID(exportDate)}.
+                            Gambar 9:16 (1080×1920) untuk Instagram Story — {formatLongDateID(exportDate)}.
                         </p>
                         <div className="mx-auto mb-5 w-full max-w-[280px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
                             {previewUrl ? (
