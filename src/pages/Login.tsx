@@ -41,7 +41,7 @@ export default function Login() {
         <div className="flex min-h-screen items-center justify-center bg-[var(--app-bg)] p-4">
             <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-white px-8 py-10 shadow-[var(--shadow-soft)] sm:px-10">
                 <div className="mb-8 flex justify-center">
-                    <BrandLogo className="h-14 w-56" />
+                    <BrandLogo className="h-20 w-72" />
                 </div>
 
                 <div className="mb-8 text-center">

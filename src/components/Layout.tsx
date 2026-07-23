@@ -124,7 +124,7 @@ export default function Layout() {
                         >
                             {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                         </button>
-                        <BrandLogo variant="icon" className="h-9 w-9 rounded-lg border border-blue-100" />
+                        <BrandLogo variant="icon" className="h-9 w-9 shrink-0 rounded-lg border border-blue-100" />
                         <span className="ml-3 text-lg font-bold text-slate-900">JADOK</span>
                     </div>
                 </header>

@@ -80,7 +80,7 @@ export default function Viewer() {
             <div className="flex h-screen items-center justify-center bg-[var(--app-bg)] text-slate-600">
                 <div className="rounded-xl border border-slate-200 bg-white px-6 py-5">
                     <div className="flex items-center gap-3 text-sm font-medium">
-                        <BrandLogo variant="icon" className="h-8 w-8 rounded-lg" />
+                        <BrandLogo variant="icon" className="h-9 w-9 shrink-0 rounded-lg" />
                         Memuat jadwal dokter...
                     </div>
                 </div>
@@ -94,7 +94,7 @@ export default function Viewer() {
         <div className="min-h-screen bg-[var(--app-bg)] p-4 font-sans text-slate-900 sm:p-6 lg:p-8">
             <header className="page-header sticky top-4 z-10 mx-auto max-w-7xl">
                 <div className="flex items-center gap-4">
-                    <BrandLogo variant="icon" className="hidden h-12 w-12 rounded-xl border border-slate-200 sm:inline-flex" />
+                    <BrandLogo variant="icon" className="hidden h-11 w-11 shrink-0 rounded-xl border border-slate-200 sm:inline-flex" />
                     <div>
                         <h1 className="page-title">Jadwal Dokter</h1>
                         <p className="page-subtitle">{formatLongDateID(getLocalDateISOString())}</p>

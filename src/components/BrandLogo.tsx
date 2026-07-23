@@ -10,7 +10,7 @@ const ICON_LOGO = '/assets/jadok%20small%20logo.png'
 export default function BrandLogo({ variant = 'brand', className = '', imageClassName = '' }: BrandLogoProps) {
     if (variant === 'icon') {
         return (
-            <span className={`inline-flex overflow-hidden rounded-2xl bg-white ${className}`}>
+            <span className={`inline-flex items-center justify-center overflow-hidden rounded-2xl bg-white p-1 ${className}`}>
                 <img
                     src={ICON_LOGO}
                     alt="JADOK"

@@ -46,9 +46,9 @@ const C = {
     accent: '#0f766e',
 }
 
-const HERO_BOTTOM = 360
+const HERO_BOTTOM = 340
 const SHEET_INSET = 80
-const SHEET_TOP = 340
+const SHEET_TOP = 320
 const SHEET_BOTTOM_PAD = 40
 const SHEET_RADIUS = 36
 const SHEET_INNER_PAD = 24
@@ -217,6 +217,33 @@ function drawTruncatedText(
     ctx.fillText(best || '…', x, y)
 }
 
+/** Draw image inside a box without stretching (object-contain). */
+function drawImageContain(
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+) {
+    const iw = img.naturalWidth || img.width
+    const ih = img.naturalHeight || img.height
+    if (!iw || !ih || w <= 0 || h <= 0) return
+
+    const imageRatio = iw / ih
+    const boxRatio = w / h
+    let dw = w
+    let dh = h
+    if (imageRatio > boxRatio) {
+        dh = w / imageRatio
+    } else {
+        dw = h * imageRatio
+    }
+    const dx = x + (w - dw) / 2
+    const dy = y + (h - dh) / 2
+    ctx.drawImage(img, dx, dy, dw, dh)
+}
+
 export default function ExportSchedule() {
     const [exportDate, setExportDate] = useState(getLocalDateISOString())
     const [groupedSchedules, setGroupedSchedules] = useState<GroupedSchedule[]>([])
@@ -286,7 +313,9 @@ export default function ExportSchedule() {
         let metrics = baseMetrics(mode, deptCount)
 
         // Hero metrics first so sheet top can sit below the chip (never overlaps it)
-        const titleY = logo ? 160 : 88
+        const logoBox = 96
+        const logoBoxY = 56
+        const titleY = logo ? logoBoxY + logoBox + 18 : 88
         const chipH = 40
         const chipY = titleY + 118
         const sheetX = SHEET_INSET
@@ -331,12 +360,13 @@ export default function ExportSchedule() {
         ctx.textBaseline = 'top'
 
         if (logo) {
-            const box = 88
+            const box = logoBox
             const boxX = (STORY_WIDTH - box) / 2
-            const boxY = 56
-            fillRoundRect(ctx, boxX, boxY, box, box, 20, C.surface)
+            const boxY = logoBoxY
+            fillRoundRect(ctx, boxX, boxY, box, box, 24, C.surface)
             const pad = 10
-            ctx.drawImage(logo, boxX + pad, boxY + pad, box - pad * 2, box - pad * 2)
+            // Use original small logo as-is; contain keeps aspect (no stretch).
+            drawImageContain(ctx, logo, boxX + pad, boxY + pad, box - pad * 2, box - pad * 2)
         }
 
         ctx.fillStyle = C.surface
@@ -573,7 +603,7 @@ export default function ExportSchedule() {
             <div className="mx-auto w-full max-w-[360px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="border-b border-slate-100 bg-[var(--app-bg)] px-5 py-5">
                     <div className="flex items-center gap-3">
-                        <BrandLogo variant="icon" className="h-10 w-10 rounded-lg border border-slate-200" />
+                        <BrandLogo variant="icon" className="h-11 w-11 shrink-0 rounded-xl border border-slate-200" />
                         <div>
                             <h2 className="text-lg font-semibold text-slate-900">Jadwal Dokter</h2>
                             <p className="text-sm text-slate-500">{formatLongDateID(exportDate)}</p>
@@ -649,7 +679,7 @@ export default function ExportSchedule() {
                             </button>
                         </div>
                         <p className="mb-4 text-sm text-slate-500">
-                            Gambar 9:16 (1080×1920) untuk Instagram Story — {formatLongDateID(exportDate)}.
+                            Ekspor jadwal untuk hari ini. — {formatLongDateID(exportDate)}.
                         </p>
                         <div className="mx-auto mb-5 w-full max-w-[280px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
                             {previewUrl ? (
