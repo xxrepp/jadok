@@ -239,13 +239,16 @@ export const supabase = {
     },
 
     storage: {
-        from(_bucket: string) {
+        from(bucket: string) {
             return {
                 async upload(filePath: string, file: File) {
                     try {
                         const formData = new FormData()
                         formData.append('file', file)
-                        const data = await apiFetch('/uploads/templates', { method: 'POST', body: formData })
+                        const endpoint = bucket === 'export-backgrounds'
+                            ? '/uploads/export-backgrounds'
+                            : '/uploads/templates'
+                        const data = await apiFetch(endpoint, { method: 'POST', body: formData })
                         uploadUrlByPath.set(filePath, data.publicUrl)
                         return { data: { path: data.path }, error: null }
                     } catch (error) {

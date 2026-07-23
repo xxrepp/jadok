@@ -132,5 +132,35 @@ export function createSchema(db) {
     db.exec(`ALTER TABLE template_zones ADD COLUMN schedule_layout TEXT`)
   }
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS export_backgrounds (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      image_url TEXT,
+      kind TEXT NOT NULL CHECK (kind IN ('default', 'image')),
+      is_active INTEGER NOT NULL DEFAULT 0,
+      is_archived INTEGER NOT NULL DEFAULT 0,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `)
+
+  const defaultBg = db.prepare(`SELECT id FROM export_backgrounds WHERE kind = 'default' LIMIT 1`).get()
+  if (!defaultBg) {
+    db.prepare(`
+      INSERT INTO export_backgrounds (name, image_url, kind, is_active, is_archived, sort_order)
+      VALUES ('Default Teal', NULL, 'default', 1, 0, 0)
+    `).run()
+  } else {
+    const activeCount = db.prepare(`
+      SELECT COUNT(*) AS count FROM export_backgrounds
+      WHERE is_active = 1 AND is_archived = 0
+    `).get().count
+    if (activeCount === 0) {
+      db.prepare(`UPDATE export_backgrounds SET is_active = 1 WHERE id = ?`).run(defaultBg.id)
+    }
+  }
+
   migrateUserRoles(db)
 }

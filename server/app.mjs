@@ -5,7 +5,7 @@ import { nanoid } from 'nanoid'
 import fs from 'node:fs'
 import path from 'node:path'
 
-const TABLES = new Set(['profiles', 'departments', 'doctors', 'schedules', 'templates', 'template_zones'])
+const TABLES = new Set(['profiles', 'departments', 'doctors', 'schedules', 'templates', 'template_zones', 'export_backgrounds'])
 const TABLE_ALIASES = { profiles: 'users' }
 const TABLE_PRIMARY_KEYS = {
   profiles: 'id',
@@ -14,8 +14,11 @@ const TABLE_PRIMARY_KEYS = {
   schedules: 'id',
   templates: 'id',
   template_zones: 'id',
+  export_backgrounds: 'id',
 }
 const PUBLIC_READ_TABLES = new Set(['departments', 'doctors', 'schedules', 'templates', 'template_zones'])
+const BOOLEAN_TABLES = new Set(['templates', 'export_backgrounds'])
+const HUMAS_WRITE_TABLES = new Set(['export_backgrounds', 'profiles'])
 
 function tableName(table) {
   return TABLE_ALIASES[table] ?? table
@@ -61,6 +64,7 @@ function pickAllowed(table, payload) {
     schedules: ['doctor_id', 'date', 'start_time', 'end_time', 'created_by'],
     templates: ['name', 'background_image_url', 'is_active', 'is_archived', 'created_at', 'created_by'],
     template_zones: ['template_id', 'department_id', 'pos_x', 'pos_y', 'font_color', 'font_size', 'width', 'height', 'font_family', 'text_align', 'zone_type', 'custom_text', 'schedule_layout'],
+    export_backgrounds: ['name', 'image_url', 'kind', 'is_active', 'is_archived', 'sort_order', 'created_at', 'created_by'],
   }[table]
 
   const out = {}
@@ -72,7 +76,7 @@ function pickAllowed(table, payload) {
 
 function normalizeRow(table, row) {
   if (!row) return row
-  if (table === 'templates') {
+  if (BOOLEAN_TABLES.has(table)) {
     return {
       ...row,
       is_active: row.is_active == null ? row.is_active : Boolean(row.is_active),
@@ -166,10 +170,20 @@ function createRow(db, table, payload, user) {
   const physical = tableName(table)
   const data = pickAllowed(table, payload)
   if (table === 'schedules' && !data.created_by && user) data.created_by = user.id
-  if (table === 'templates' && !data.created_by && user) data.created_by = user.id
-  if (table === 'templates') {
+  if ((table === 'templates' || table === 'export_backgrounds') && !data.created_by && user) data.created_by = user.id
+  if (BOOLEAN_TABLES.has(table)) {
     if ('is_active' in data) data.is_active = data.is_active ? 1 : 0
     if ('is_archived' in data) data.is_archived = data.is_archived ? 1 : 0
+  }
+  if (table === 'export_backgrounds') {
+    if (!data.kind) data.kind = data.image_url ? 'image' : 'default'
+    if (data.kind === 'default') data.image_url = null
+    if (data.kind === 'image' && !data.image_url) {
+      throw Object.assign(new Error('image_url required for image backgrounds'), { status: 400 })
+    }
+    // New uploads are inactive until explicitly activated.
+    if (!('is_active' in data)) data.is_active = 0
+    if (!('is_archived' in data)) data.is_archived = 0
   }
   const keys = Object.keys(data)
   if (keys.length === 0) throw Object.assign(new Error('No writable fields provided'), { status: 400 })
@@ -183,7 +197,7 @@ function createRow(db, table, payload, user) {
 function updateRows(db, table, payload, filters) {
   const physical = tableName(table)
   const data = pickAllowed(table, payload)
-  if (table === 'templates') {
+  if (BOOLEAN_TABLES.has(table)) {
     if ('is_active' in data) data.is_active = data.is_active ? 1 : 0
     if ('is_archived' in data) data.is_archived = data.is_archived ? 1 : 0
   }
@@ -397,6 +411,108 @@ export function createApp({ db, uploadDir = path.resolve('uploads'), staticDir =
     res.status(201).json({ path: finalName, publicUrl: `/uploads/${finalName}` })
   })
 
+  app.post('/api/uploads/export-backgrounds', requireAuth, requireRole('HUMAS'), upload.single('file'), (req, res) => {
+    const file = req.file
+    if (!file) return res.status(400).json({ error: 'Missing file' })
+    const allowed = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp'])
+    if (file.mimetype && !allowed.has(file.mimetype)) {
+      try { fs.unlinkSync(file.path) } catch { /* ignore */ }
+      return res.status(400).json({ error: 'Only PNG, JPG, or WEBP images are allowed' })
+    }
+    const ext = path.extname(file.originalname) || `.${(file.mimetype || 'image/png').split('/')[1] || 'png'}`
+    const finalName = `export-bg-${Date.now()}-${nanoid(8)}${ext}`
+    const finalPath = path.join(uploadDir, finalName)
+    fs.renameSync(file.path, finalPath)
+    res.status(201).json({ path: finalName, publicUrl: `/uploads/${finalName}` })
+  })
+
+  function setActiveExportBackground(id) {
+    const row = db.prepare('SELECT * FROM export_backgrounds WHERE id = ?').get(id)
+    if (!row) throw Object.assign(new Error('Background not found'), { status: 404 })
+    if (row.is_archived) throw Object.assign(new Error('Cannot activate an archived background'), { status: 400 })
+    const tx = db.transaction(() => {
+      db.prepare('UPDATE export_backgrounds SET is_active = 0').run()
+      db.prepare('UPDATE export_backgrounds SET is_active = 1, is_archived = 0 WHERE id = ?').run(id)
+    })
+    tx()
+    return normalizeRow('export_backgrounds', db.prepare('SELECT * FROM export_backgrounds WHERE id = ?').get(id))
+  }
+
+  app.post('/api/rpc/set_active_export_background', requireAuth, requireRole('HUMAS'), (req, res, next) => {
+    try {
+      const id = Number(req.body.background_id ?? req.body.id)
+      if (!Number.isInteger(id)) return res.status(400).json({ error: 'background_id required' })
+      res.json(setActiveExportBackground(id))
+    } catch (error) { next(error) }
+  })
+
+  app.post('/api/rpc/archive_export_background', requireAuth, requireRole('HUMAS'), (req, res, next) => {
+    try {
+      const id = Number(req.body.background_id ?? req.body.id)
+      if (!Number.isInteger(id)) return res.status(400).json({ error: 'background_id required' })
+      const row = db.prepare('SELECT * FROM export_backgrounds WHERE id = ?').get(id)
+      if (!row) return res.status(404).json({ error: 'Background not found' })
+      if (row.kind === 'default') return res.status(400).json({ error: 'Default background cannot be archived' })
+
+      const tx = db.transaction(() => {
+        db.prepare('UPDATE export_backgrounds SET is_archived = 1, is_active = 0 WHERE id = ?').run(id)
+        const stillActive = db.prepare(`
+          SELECT id FROM export_backgrounds WHERE is_active = 1 AND is_archived = 0 LIMIT 1
+        `).get()
+        if (!stillActive) {
+          db.prepare(`
+            UPDATE export_backgrounds SET is_active = 1
+            WHERE kind = 'default' AND is_archived = 0
+          `).run()
+        }
+      })
+      tx()
+      res.json(normalizeRow('export_backgrounds', db.prepare('SELECT * FROM export_backgrounds WHERE id = ?').get(id)))
+    } catch (error) { next(error) }
+  })
+
+  app.post('/api/rpc/unarchive_export_background', requireAuth, requireRole('HUMAS'), (req, res, next) => {
+    try {
+      const id = Number(req.body.background_id ?? req.body.id)
+      if (!Number.isInteger(id)) return res.status(400).json({ error: 'background_id required' })
+      const row = db.prepare('SELECT * FROM export_backgrounds WHERE id = ?').get(id)
+      if (!row) return res.status(404).json({ error: 'Background not found' })
+      if (row.kind === 'default') return res.status(400).json({ error: 'Default background cannot be unarchived' })
+
+      db.prepare('UPDATE export_backgrounds SET is_archived = 0 WHERE id = ?').run(id)
+      res.json(normalizeRow('export_backgrounds', db.prepare('SELECT * FROM export_backgrounds WHERE id = ?').get(id)))
+    } catch (error) { next(error) }
+  })
+
+  app.post('/api/rpc/delete_export_background', requireAuth, requireRole('HUMAS'), (req, res, next) => {
+    try {
+      const id = Number(req.body.background_id ?? req.body.id)
+      if (!Number.isInteger(id)) return res.status(400).json({ error: 'background_id required' })
+      const row = db.prepare('SELECT * FROM export_backgrounds WHERE id = ?').get(id)
+      if (!row) return res.status(404).json({ error: 'Background not found' })
+      if (row.kind === 'default') return res.status(400).json({ error: 'Default background cannot be deleted' })
+
+      const wasActive = Boolean(row.is_active)
+      db.prepare('DELETE FROM export_backgrounds WHERE id = ?').run(id)
+
+      if (wasActive) {
+        db.prepare(`
+          UPDATE export_backgrounds SET is_active = 1
+          WHERE kind = 'default' AND is_archived = 0
+        `).run()
+      }
+
+      // Best-effort remove uploaded file under /uploads
+      if (row.image_url && String(row.image_url).startsWith('/uploads/')) {
+        const fileName = path.basename(row.image_url)
+        const filePath = path.join(uploadDir, fileName)
+        try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath) } catch { /* ignore */ }
+      }
+
+      res.json({ ok: true })
+    } catch (error) { next(error) }
+  })
+
   app.get('/api/:table', (req, res, next) => {
     try {
       const table = req.params.table
@@ -410,7 +526,15 @@ export function createApp({ db, uploadDir = path.resolve('uploads'), staticDir =
     try {
       const table = req.params.table
       if (!TABLES.has(table)) return res.status(404).json({ error: 'Unknown table' })
-      if (table === 'profiles' && req.user.role !== 'HUMAS') return res.status(403).json({ error: 'Forbidden' })
+      if (HUMAS_WRITE_TABLES.has(table) && req.user.role !== 'HUMAS') return res.status(403).json({ error: 'Forbidden' })
+      if (table === 'export_backgrounds') {
+        // Force safe defaults for create via generic table API.
+        if (Array.isArray(req.body)) {
+          req.body = req.body.map((item) => ({ ...item, kind: 'image', is_active: false, is_archived: false }))
+        } else {
+          req.body = { ...req.body, kind: 'image', is_active: false, is_archived: false }
+        }
+      }
       const payloads = Array.isArray(req.body) ? req.body : [req.body]
       const rows = payloads.map((payload) => createRow(db, table, payload, req.user))
       res.status(201).json(Array.isArray(req.body) ? rows : rows[0])
@@ -421,6 +545,11 @@ export function createApp({ db, uploadDir = path.resolve('uploads'), staticDir =
     try {
       const table = req.params.table
       if (!TABLES.has(table)) return res.status(404).json({ error: 'Unknown table' })
+      if (table === 'export_backgrounds' && req.user.role !== 'HUMAS') return res.status(403).json({ error: 'Forbidden' })
+      // Prefer dedicated RPCs for activate/archive on export backgrounds.
+      if (table === 'export_backgrounds' && ('is_active' in (req.body || {}) || 'is_archived' in (req.body || {}))) {
+        return res.status(400).json({ error: 'Use set_active_export_background / archive_export_background RPCs' })
+      }
       res.json(updateRows(db, table, req.body, req.query))
     } catch (error) { next(error) }
   })
@@ -429,6 +558,10 @@ export function createApp({ db, uploadDir = path.resolve('uploads'), staticDir =
     try {
       const table = req.params.table
       if (!TABLES.has(table)) return res.status(404).json({ error: 'Unknown table' })
+      if (table === 'export_backgrounds' && req.user.role !== 'HUMAS') return res.status(403).json({ error: 'Forbidden' })
+      if (table === 'export_backgrounds') {
+        return res.status(400).json({ error: 'Use delete_export_background RPC' })
+      }
       res.json(deleteRows(db, table, req.query))
     } catch (error) { next(error) }
   })

@@ -165,6 +165,41 @@ export interface Database {
                     schedule_layout?: string | null
                 }
             }
+            export_backgrounds: {
+                Row: {
+                    id: number
+                    name: string
+                    image_url: string | null
+                    kind: 'default' | 'image'
+                    is_active: boolean
+                    is_archived: boolean
+                    sort_order: number
+                    created_by: string | null
+                    created_at: string
+                }
+                Insert: {
+                    id?: never
+                    name: string
+                    image_url?: string | null
+                    kind?: 'default' | 'image'
+                    is_active?: boolean
+                    is_archived?: boolean
+                    sort_order?: number
+                    created_by?: string | null
+                    created_at?: string
+                }
+                Update: {
+                    id?: never
+                    name?: string
+                    image_url?: string | null
+                    kind?: 'default' | 'image'
+                    is_active?: boolean
+                    is_archived?: boolean
+                    sort_order?: number
+                    created_by?: string | null
+                    created_at?: string
+                }
+            }
         }
     }
 }

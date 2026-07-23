@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Database } from '../../types/database.types'
-import { CalendarDays, Clock, Download, Stethoscope, X } from 'lucide-react'
+import { Archive, CalendarDays, Check, Clock, Download, Eye, ImagePlus, Stethoscope, Trash2, X } from 'lucide-react'
 import { formatLongDateID, getLocalDateISOString } from '../../utils/dateUtils'
 import BrandLogo from '../../components/BrandLogo'
 
@@ -15,6 +15,8 @@ type GroupedSchedule = {
     department: string
     schedules: Schedule[]
 }
+
+type ExportBackground = Database['public']['Tables']['export_backgrounds']['Row']
 
 type DensityMode = 'comfortable' | 'compact' | 'dense'
 
@@ -238,6 +240,45 @@ function drawTruncatedText(
     ctx.fillText(best || '…', x, y)
 }
 
+/** Cover-draw image into a rectangle without stretching (object-cover). */
+function drawImageCover(
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+) {
+    const iw = img.naturalWidth || img.width
+    const ih = img.naturalHeight || img.height
+    if (!iw || !ih || w <= 0 || h <= 0) return
+
+    const imageRatio = iw / ih
+    const boxRatio = w / h
+    let sw = iw
+    let sh = ih
+    let sx = 0
+    let sy = 0
+    if (imageRatio > boxRatio) {
+        sw = ih * boxRatio
+        sx = (iw - sw) / 2
+    } else {
+        sh = iw / boxRatio
+        sy = (ih - sh) / 2
+    }
+    ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h)
+}
+
+function paintDefaultGradient(ctx: CanvasRenderingContext2D) {
+    const bg = ctx.createLinearGradient(0, 0, 0, STORY_HEIGHT)
+    bg.addColorStop(0, C.bgTop)
+    bg.addColorStop(0.22, C.bgTopDeep)
+    bg.addColorStop(0.38, C.bgBottom)
+    bg.addColorStop(1, C.bgBottom)
+    ctx.fillStyle = bg
+    ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT)
+}
+
 /** Like BrandLogo brand variant: object-contain then CSS scale, clipped to plate. */
 function drawImageContainScaled(
     ctx: CanvasRenderingContext2D,
@@ -284,16 +325,71 @@ export default function ExportSchedule() {
     const [previewOpen, setPreviewOpen] = useState(false)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
     const [previewing, setPreviewing] = useState(false)
+    const [backgrounds, setBackgrounds] = useState<ExportBackground[]>([])
+    const [backgroundsLoading, setBackgroundsLoading] = useState(true)
+    const [backgroundError, setBackgroundError] = useState<string | null>(null)
+    const [showArchivedBackgrounds, setShowArchivedBackgrounds] = useState(false)
+    const [uploadingBackground, setUploadingBackground] = useState(false)
+    const [backgroundActionId, setBackgroundActionId] = useState<number | null>(null)
+    const [templatePreview, setTemplatePreview] = useState<ExportBackground | null>(null)
+    const [confirmDialog, setConfirmDialog] = useState<null | {
+        title: string
+        message: string
+        confirmLabel: string
+        danger?: boolean
+        action: () => Promise<void>
+    }>(null)
+    const [renamingId, setRenamingId] = useState<number | null>(null)
+    const [renameValue, setRenameValue] = useState('')
+    const [renameSaving, setRenameSaving] = useState(false)
     const canvasRef = useRef<HTMLCanvasElement>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
         void fetchSchedules()
     }, [exportDate])
 
     useEffect(() => {
+        void fetchBackgrounds()
+    }, [])
+
+    useEffect(() => {
         setPreviewOpen(false)
         setPreviewUrl(null)
     }, [exportDate])
+
+    const fetchBackgrounds = async () => {
+        try {
+            setBackgroundsLoading(true)
+            setBackgroundError(null)
+            const { data, error: fetchError } = await supabase
+                .from('export_backgrounds')
+                .select('*')
+                .order('sort_order')
+            if (fetchError) throw fetchError
+            setBackgrounds((data as ExportBackground[]) || [])
+        } catch (err) {
+            console.error('Error fetching export backgrounds:', err)
+            setBackgroundError('Gagal memuat latar ekspor.')
+            setBackgrounds([])
+        } finally {
+            setBackgroundsLoading(false)
+        }
+    }
+
+    const activeBackground =
+        backgrounds.find((bg) => bg.is_active && !bg.is_archived) ||
+        backgrounds.find((bg) => bg.kind === 'default' && !bg.is_archived) ||
+        null
+
+    const visibleBackgrounds = backgrounds
+        .filter((bg) => (showArchivedBackgrounds ? true : !bg.is_archived))
+        .sort((a, b) => {
+            if (a.kind === 'default' && b.kind !== 'default') return -1
+            if (b.kind === 'default' && a.kind !== 'default') return 1
+            if (a.is_archived !== b.is_archived) return a.is_archived ? 1 : -1
+            return (a.sort_order || 0) - (b.sort_order || 0) || a.id - b.id
+        })
 
     const fetchSchedules = async () => {
         try {
@@ -338,6 +434,7 @@ export default function ExportSchedule() {
         ctx: CanvasRenderingContext2D,
         logo: HTMLImageElement | null,
         footer: HTMLImageElement | null,
+        backgroundImage: HTMLImageElement | null,
     ) => {
         const deptCount = groupedSchedules.length
         const mode = pickDensityMode(totalDoctors, deptCount)
@@ -386,13 +483,12 @@ export default function ExportSchedule() {
         }
         metrics = scaleMetrics(metrics, scale)
 
-        const bg = ctx.createLinearGradient(0, 0, 0, STORY_HEIGHT)
-        bg.addColorStop(0, C.bgTop)
-        bg.addColorStop(0.22, C.bgTopDeep)
-        bg.addColorStop(0.38, C.bgBottom)
-        bg.addColorStop(1, C.bgBottom)
-        ctx.fillStyle = bg
-        ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT)
+        // Full-canvas background: image cover or built-in teal gradient.
+        if (backgroundImage) {
+            drawImageCover(ctx, backgroundImage, 0, 0, STORY_WIDTH, STORY_HEIGHT)
+        } else {
+            paintDefaultGradient(ctx)
+        }
 
         const heroGlow = ctx.createRadialGradient(
             STORY_WIDTH / 2,
@@ -582,8 +678,198 @@ export default function ExportSchedule() {
         canvas.height = STORY_HEIGHT
 
         const [logo, footer] = await Promise.all([loadLogo(), loadFooter()])
-        paintStoryCanvas(ctx, logo, footer)
+        let backgroundImage: HTMLImageElement | null = null
+        if (activeBackground?.kind === 'image' && activeBackground.image_url) {
+            backgroundImage = await loadImage(activeBackground.image_url)
+        }
+        paintStoryCanvas(ctx, logo, footer, backgroundImage)
         return canvas.toDataURL('image/png')
+    }
+
+    const handleUploadBackground = async (file: File | null) => {
+        if (!file) return
+        setUploadingBackground(true)
+        setBackgroundError(null)
+        try {
+            const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+            const filePath = `export-bg/${Date.now()}-${safeName}`
+            const { error: uploadError } = await supabase.storage
+                .from('export-backgrounds')
+                .upload(filePath, file)
+            if (uploadError) throw uploadError
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('export-backgrounds')
+                .getPublicUrl(filePath)
+
+            const baseName = file.name.replace(/\.[^.]+$/, '').trim() || 'Latar kustom'
+            const { error: insertError } = await supabase
+                .from('export_backgrounds')
+                .insert({
+                    name: baseName,
+                    image_url: publicUrl,
+                    kind: 'image',
+                    is_active: false,
+                    is_archived: false,
+                    sort_order: backgrounds.length + 1,
+                })
+            if (insertError) throw insertError
+            await fetchBackgrounds()
+        } catch (err: any) {
+            console.error('Upload background failed:', err)
+            setBackgroundError(err?.message || 'Gagal mengunggah latar.')
+        } finally {
+            setUploadingBackground(false)
+            if (fileInputRef.current) fileInputRef.current.value = ''
+        }
+    }
+
+    const handleActivateBackground = async (id: number) => {
+        setBackgroundActionId(id)
+        setBackgroundError(null)
+        try {
+            const { error: rpcError } = await supabase.rpc('set_active_export_background', {
+                background_id: id,
+            })
+            if (rpcError) throw rpcError
+            await fetchBackgrounds()
+            setPreviewOpen(false)
+            setPreviewUrl(null)
+        } catch (err: any) {
+            console.error('Activate background failed:', err)
+            setBackgroundError(err?.message || 'Gagal mengaktifkan latar.')
+        } finally {
+            setBackgroundActionId(null)
+        }
+    }
+
+    const handleArchiveBackground = async (bg: ExportBackground) => {
+        if (bg.kind === 'default') return
+        setConfirmDialog({
+            title: 'Arsipkan latar?',
+            message: `Latar "${bg.name}" akan dipindah ke arsip. Anda bisa mengembalikannya nanti.`,
+            confirmLabel: 'Arsipkan',
+            action: async () => {
+                setBackgroundActionId(bg.id)
+                setBackgroundError(null)
+                try {
+                    const { error: rpcError } = await supabase.rpc('archive_export_background', {
+                        background_id: bg.id,
+                    })
+                    if (rpcError) throw rpcError
+                    await fetchBackgrounds()
+                    if (templatePreview?.id === bg.id) {
+                        setTemplatePreview((prev) => (prev ? { ...prev, is_archived: true, is_active: false } : prev))
+                    }
+                } catch (err: any) {
+                    console.error('Archive background failed:', err)
+                    setBackgroundError(err?.message || 'Gagal mengarsipkan latar.')
+                } finally {
+                    setBackgroundActionId(null)
+                }
+            },
+        })
+    }
+
+    const handleUnarchiveBackground = async (bg: ExportBackground) => {
+        if (bg.kind === 'default') return
+        setBackgroundActionId(bg.id)
+        setBackgroundError(null)
+        try {
+            const { error: rpcError } = await supabase.rpc('unarchive_export_background', {
+                background_id: bg.id,
+            })
+            if (rpcError) throw rpcError
+            await fetchBackgrounds()
+            if (templatePreview?.id === bg.id) {
+                setTemplatePreview((prev) => (prev ? { ...prev, is_archived: false } : prev))
+            }
+        } catch (err: any) {
+            console.error('Unarchive background failed:', err)
+            setBackgroundError(err?.message || 'Gagal mengembalikan latar dari arsip.')
+        } finally {
+            setBackgroundActionId(null)
+        }
+    }
+
+    const handleDeleteBackground = async (bg: ExportBackground) => {
+        if (bg.kind === 'default') return
+        setConfirmDialog({
+            title: 'Hapus latar permanen?',
+            message: `Latar "${bg.name}" dan filenya akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.`,
+            confirmLabel: 'Hapus',
+            danger: true,
+            action: async () => {
+                setBackgroundActionId(bg.id)
+                setBackgroundError(null)
+                try {
+                    const { error: rpcError } = await supabase.rpc('delete_export_background', {
+                        background_id: bg.id,
+                    })
+                    if (rpcError) throw rpcError
+                    await fetchBackgrounds()
+                    if (templatePreview?.id === bg.id) setTemplatePreview(null)
+                    if (renamingId === bg.id) {
+                        setRenamingId(null)
+                        setRenameValue('')
+                    }
+                } catch (err: any) {
+                    console.error('Delete background failed:', err)
+                    setBackgroundError(err?.message || 'Gagal menghapus latar.')
+                } finally {
+                    setBackgroundActionId(null)
+                }
+            },
+        })
+    }
+
+    const startRenameBackground = (bg: ExportBackground) => {
+        setRenamingId(bg.id)
+        setRenameValue(bg.name)
+        setBackgroundError(null)
+    }
+
+    const cancelRenameBackground = () => {
+        setRenamingId(null)
+        setRenameValue('')
+    }
+
+    const saveRenameBackground = async (bg: ExportBackground) => {
+        const nextName = renameValue.trim()
+        if (!nextName) {
+            setBackgroundError('Nama latar wajib diisi.')
+            return
+        }
+        if (nextName === bg.name) {
+            cancelRenameBackground()
+            return
+        }
+        setRenameSaving(true)
+        setBackgroundError(null)
+        try {
+            const { error: updateError } = await supabase
+                .from('export_backgrounds')
+                .update({ name: nextName })
+                .eq('id', bg.id)
+            if (updateError) throw updateError
+            await fetchBackgrounds()
+            if (templatePreview?.id === bg.id) {
+                setTemplatePreview((prev) => (prev ? { ...prev, name: nextName } : prev))
+            }
+            cancelRenameBackground()
+        } catch (err: any) {
+            console.error('Rename background failed:', err)
+            setBackgroundError(err?.message || 'Gagal mengganti nama latar.')
+        } finally {
+            setRenameSaving(false)
+        }
+    }
+
+    const runConfirmDialog = async () => {
+        if (!confirmDialog) return
+        const action = confirmDialog.action
+        setConfirmDialog(null)
+        await action()
     }
 
     const openPreview = async () => {
@@ -654,6 +940,202 @@ export default function ExportSchedule() {
             </section>
 
             {exportError && !previewOpen && <div className="alert-error mb-4">{exportError}</div>}
+            {backgroundError && <div className="alert-error mb-4">{backgroundError}</div>}
+
+            <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h2 className="text-lg font-semibold text-slate-900">Latar Ekspor</h2>
+                        <p className="text-sm text-slate-500">
+                            Satu latar aktif dipakai semua Humas. Default teal selalu tersedia.
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => setShowArchivedBackgrounds((v) => !v)}
+                        >
+                            {showArchivedBackgrounds ? 'Sembunyikan arsip' : 'Tampilkan arsip'}
+                        </button>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            className="hidden"
+                            onChange={(e) => void handleUploadBackground(e.target.files?.[0] || null)}
+                        />
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            disabled={uploadingBackground}
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <ImagePlus className="mr-2 h-4 w-4" />
+                            {uploadingBackground ? 'Mengunggah...' : 'Unggah Latar'}
+                        </button>
+                    </div>
+                </div>
+
+                {backgroundsLoading ? (
+                    <div className="py-8 text-center text-sm text-slate-500">Memuat latar...</div>
+                ) : (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {visibleBackgrounds.map((bg) => {
+                            const busy = backgroundActionId === bg.id
+                            return (
+                                <div
+                                    key={bg.id}
+                                    className={`overflow-hidden rounded-xl border ${
+                                        bg.is_active
+                                            ? 'border-teal-500 ring-2 ring-teal-100'
+                                            : 'border-slate-200'
+                                    } ${bg.is_archived ? 'opacity-70' : ''}`}
+                                >
+                                    <button
+                                        type="button"
+                                        className="block w-full text-left"
+                                        onClick={() => setTemplatePreview(bg)}
+                                        title="Lihat pratinjau latar"
+                                    >
+                                        <div className="relative aspect-[9/16] max-h-48 w-full overflow-hidden bg-slate-100">
+                                            {bg.kind === 'default' || !bg.image_url ? (
+                                                <div
+                                                    className="h-full w-full"
+                                                    style={{
+                                                        background:
+                                                            'linear-gradient(180deg, #0d9488 0%, #0f766e 22%, #eef6f5 55%, #eef6f5 100%)',
+                                                    }}
+                                                />
+                                            ) : (
+                                                <img
+                                                    src={bg.image_url}
+                                                    alt={bg.name}
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            )}
+                                            {bg.is_active && (
+                                                <span className="absolute left-2 top-2 inline-flex items-center rounded-full bg-teal-600 px-2 py-0.5 text-[11px] font-semibold text-white">
+                                                    <Check className="mr-1 h-3 w-3" />
+                                                    Aktif
+                                                </span>
+                                            )}
+                                            {bg.is_archived && (
+                                                <span className="absolute right-2 top-2 rounded-full bg-slate-700/80 px-2 py-0.5 text-[11px] font-semibold text-white">
+                                                    Arsip
+                                                </span>
+                                            )}
+                                        </div>
+                                    </button>
+                                    <div className="space-y-2 p-3">
+                                        <div>
+                                            {renamingId === bg.id ? (
+                                                <div className="space-y-2">
+                                                    <input
+                                                        autoFocus
+                                                        value={renameValue}
+                                                        onChange={(e) => setRenameValue(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') void saveRenameBackground(bg)
+                                                            if (e.key === 'Escape') cancelRenameBackground()
+                                                        }}
+                                                        className="input !py-1.5 text-sm"
+                                                        maxLength={80}
+                                                    />
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-primary !px-2 !py-1 text-xs"
+                                                            disabled={renameSaving}
+                                                            onClick={() => void saveRenameBackground(bg)}
+                                                        >
+                                                            {renameSaving ? '...' : 'Simpan'}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-secondary !px-2 !py-1 text-xs"
+                                                            disabled={renameSaving}
+                                                            onClick={cancelRenameBackground}
+                                                        >
+                                                            Batal
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    className="group flex w-full items-start text-left"
+                                                    onClick={() => startRenameBackground(bg)}
+                                                    title="Klik untuk ganti nama"
+                                                >
+                                                    <p className="truncate text-sm font-semibold text-slate-900 group-hover:text-teal-700">
+                                                        {bg.name}
+                                                    </p>
+                                                </button>
+                                            )}
+                                            <p className="text-xs text-slate-500">
+                                                {bg.kind === 'default' ? 'Bawaan sistem' : 'Kustom'}
+                                            </p>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            <button
+                                                type="button"
+                                                className="btn btn-secondary !px-2 !py-1 text-xs"
+                                                onClick={() => setTemplatePreview(bg)}
+                                            >
+                                                <Eye className="mr-1 h-3.5 w-3.5" />
+                                                Lihat
+                                            </button>
+                                            {!bg.is_active && !bg.is_archived && (
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-primary !px-2 !py-1 text-xs"
+                                                    disabled={busy}
+                                                    onClick={() => void handleActivateBackground(bg.id)}
+                                                >
+                                                    {busy ? '...' : 'Aktifkan'}
+                                                </button>
+                                            )}
+                                            {bg.kind !== 'default' && !bg.is_archived && (
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-secondary !px-2 !py-1 text-xs"
+                                                    disabled={busy}
+                                                    onClick={() => void handleArchiveBackground(bg)}
+                                                >
+                                                    <Archive className="mr-1 h-3.5 w-3.5" />
+                                                    Arsip
+                                                </button>
+                                            )}
+                                            {bg.kind !== 'default' && bg.is_archived && (
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-primary !px-2 !py-1 text-xs"
+                                                    disabled={busy}
+                                                    onClick={() => void handleUnarchiveBackground(bg)}
+                                                >
+                                                    {busy ? '...' : 'Batal Arsip'}
+                                                </button>
+                                            )}
+                                            {bg.kind !== 'default' && (
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-secondary !px-2 !py-1 text-xs text-red-600"
+                                                    disabled={busy}
+                                                    onClick={() => void handleDeleteBackground(bg)}
+                                                >
+                                                    <Trash2 className="mr-1 h-3.5 w-3.5" />
+                                                    Hapus
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
+            </section>
 
             <section className="mx-auto w-full max-w-7xl">
                 <div className="page-header mb-4">
@@ -746,6 +1228,7 @@ export default function ExportSchedule() {
                         </div>
                         <p className="mb-4 text-sm text-slate-500">
                             Gambar 9:16 (1080×1920) untuk Instagram Story — {formatLongDateID(exportDate)}.
+                            {activeBackground ? ` Latar aktif: ${activeBackground.name}.` : ''}
                         </p>
                         <div className="mx-auto mb-5 w-full max-w-[280px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
                             {previewUrl ? (
@@ -774,6 +1257,161 @@ export default function ExportSchedule() {
                             >
                                 <Download className="mr-2 h-4 w-4" />
                                 {exporting ? 'Mengunduh...' : 'Ekspor'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {templatePreview && (
+                <div className="modal-backdrop" onClick={() => setTemplatePreview(null)}>
+                    <div
+                        className="modal-card max-h-[90vh] max-w-lg overflow-y-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="mb-4 flex items-center justify-between gap-3">
+                            {renamingId === templatePreview.id ? (
+                                <div className="min-w-0 flex-1 space-y-2">
+                                    <input
+                                        autoFocus
+                                        value={renameValue}
+                                        onChange={(e) => setRenameValue(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') void saveRenameBackground(templatePreview)
+                                            if (e.key === 'Escape') cancelRenameBackground()
+                                        }}
+                                        className="input"
+                                        maxLength={80}
+                                    />
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            className="btn btn-primary !px-3 !py-1.5 text-sm"
+                                            disabled={renameSaving}
+                                            onClick={() => void saveRenameBackground(templatePreview)}
+                                        >
+                                            {renameSaving ? 'Menyimpan...' : 'Simpan nama'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary !px-3 !py-1.5 text-sm"
+                                            disabled={renameSaving}
+                                            onClick={cancelRenameBackground}
+                                        >
+                                            Batal
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    className="min-w-0 text-left"
+                                    onClick={() => startRenameBackground(templatePreview)}
+                                    title="Klik untuk ganti nama"
+                                >
+                                    <h2 className="truncate text-xl font-semibold hover:text-teal-700">
+                                        {templatePreview.name}
+                                    </h2>
+                                    <p className="text-xs text-slate-500">Klik nama untuk mengganti</p>
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => setTemplatePreview(null)}
+                                className="action-icon shrink-0"
+                                aria-label="Tutup"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                        <div className="mx-auto mb-5 w-full max-w-[280px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
+                            {templatePreview.kind === 'default' || !templatePreview.image_url ? (
+                                <div
+                                    className="aspect-[9/16] w-full"
+                                    style={{
+                                        background:
+                                            'linear-gradient(180deg, #0d9488 0%, #0f766e 22%, #eef6f5 55%, #eef6f5 100%)',
+                                    }}
+                                />
+                            ) : (
+                                <img
+                                    src={templatePreview.image_url}
+                                    alt={templatePreview.name}
+                                    className="block h-auto w-full"
+                                />
+                            )}
+                        </div>
+                        <div className="flex flex-wrap justify-end gap-2">
+                            {!templatePreview.is_active && !templatePreview.is_archived && (
+                                <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    disabled={backgroundActionId === templatePreview.id}
+                                    onClick={() => void handleActivateBackground(templatePreview.id)}
+                                >
+                                    Jadikan Aktif
+                                </button>
+                            )}
+                            {templatePreview.kind !== 'default' && !templatePreview.is_archived && (
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    disabled={backgroundActionId === templatePreview.id}
+                                    onClick={() => void handleArchiveBackground(templatePreview)}
+                                >
+                                    Arsipkan
+                                </button>
+                            )}
+                            {templatePreview.kind !== 'default' && templatePreview.is_archived && (
+                                <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    disabled={backgroundActionId === templatePreview.id}
+                                    onClick={() => void handleUnarchiveBackground(templatePreview)}
+                                >
+                                    Batal Arsip
+                                </button>
+                            )}
+                            {templatePreview.kind !== 'default' && (
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary text-red-600"
+                                    disabled={backgroundActionId === templatePreview.id}
+                                    onClick={() => void handleDeleteBackground(templatePreview)}
+                                >
+                                    Hapus
+                                </button>
+                            )}
+                            <button type="button" className="btn btn-secondary" onClick={() => setTemplatePreview(null)}>
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {confirmDialog && (
+                <div className="modal-backdrop" onClick={() => setConfirmDialog(null)}>
+                    <div
+                        className="modal-card max-w-md"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h2 className="mb-2 text-xl font-semibold text-slate-900">{confirmDialog.title}</h2>
+                        <p className="mb-6 text-sm leading-6 text-slate-600">{confirmDialog.message}</p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={() => setConfirmDialog(null)}
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="button"
+                                className={`btn ${confirmDialog.danger ? 'btn-secondary text-red-600' : 'btn-primary'}`}
+                                onClick={() => void runConfirmDialog()}
+                            >
+                                {confirmDialog.confirmLabel}
                             </button>
                         </div>
                     </div>
